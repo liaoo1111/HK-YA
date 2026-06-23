@@ -11,10 +11,10 @@
         
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #FAFCFC; /* 極淡清爽底色 */
+            background-color: #FAFCFC; /* 極簡乾淨白底 */
             background-image: 
-                radial-gradient(at 0% 0%, rgba(111, 183, 183, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(111, 183, 183, 0.08) 0px, transparent 50%);
+                radial-gradient(circle at 0% 0%, rgba(111, 183, 183, 0.08) 0px, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(111, 183, 183, 0.06) 0px, transparent 40%);
             background-attachment: fixed;
             color: #334155;
         }
@@ -68,7 +68,7 @@
         
         <section class="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h2 class="text-2xl font-bold mb-2 text-center text-gray-700">清單分類概覽</h2>
-            <p class="text-gray-500 text-sm text-center mb-6">即時更新的分類數據</p>
+            <p class="text-gray-500 text-sm text-center mb-6">目前收錄的美食與景點比例</p>
             <div class="chart-container">
                 <canvas id="categoryChart"></canvas>
             </div>
@@ -91,7 +91,7 @@
 
         <div id="loadingState" class="text-center py-20 flex flex-col items-center justify-center space-y-4">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6FB7B7]"></div>
-            <p class="text-gray-500">正在連接雲端資料庫，載入 34 筆最新清單...</p>
+            <p class="text-gray-500">正在載入清單資料...</p>
         </div>
 
         <section id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
@@ -137,8 +137,6 @@
                     <input type="text" id="formArea" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-[#6FB7B7] focus:border-[#6FB7B7]" placeholder="例如：佐敦站">
                 </div>
                 
-                <div id="formError" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-md border border-red-100"></div>
-                
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-200">
                     <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition">取消</button>
                     <button type="submit" id="submitBtn" class="px-6 py-2 bg-[#6FB7B7] hover:bg-[#5A9999] text-white rounded-lg transition shadow-md flex items-center gap-2">
@@ -182,30 +180,24 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hk-explorer-coop';
-        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+    <script>
+        // UUID Generator for local unique identification
+        const generateId = () => Math.random().toString(36).substr(2, 9);
         
-        let firebaseConfig = {};
-        try { firebaseConfig = JSON.parse(firebaseConfigStr); } 
-        catch (e) { firebaseConfig = { projectId: "dummy" }; }
+        let currentUserId = localStorage.getItem('hk_user_id');
+        if (!currentUserId) {
+            currentUserId = 'user_' + generateId();
+            localStorage.setItem('hk_user_id', currentUserId);
+        }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        let currentUserId = null;
         let globalData = [];
         let currentCategory = "all";
         let searchQuery = "";
         let chartInstance = null;
         let votePlaceId = null;
+        const STORAGE_KEY = 'hk_places_data_github';
 
-        // 完整的初始資料 (新增榕記陳皮燒鵝，Bakehouse已包含其中)
+        // 完整的初始資料 35間
         const initialRawData = [
             { name: "榕記陳皮燒鵝", category: "燒味與正餐", feature: "尖沙咀人氣名店，招牌陳皮燒鵝皮脆肉嫩，帶有獨特陳皮幽香", area: "尖沙咀站" },
             { name: "竺扶大班燒味", category: "燒味與正餐", feature: "以高質素燒臘著稱，脆皮燒肉與叉燒深受好評", area: "灣仔站" },
@@ -247,65 +239,51 @@
         const resultsGrid = document.getElementById('resultsGrid');
         const filterContainer = document.getElementById('filterButtons');
         
-        async function init() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                currentUserId = auth.currentUser.uid;
-                
-                setupEventListeners();
-                await syncDataFromCloud();
-            } catch (error) {
-                document.getElementById('loadingState').innerHTML = `<p class="text-red-500">系統連線失敗。 (${error.message})</p>`;
-            }
+        function init() {
+            setupEventListeners();
+            loadLocalData();
         }
 
-        async function syncDataFromCloud() {
-            // 使用全新的路徑 places_v3 強制系統寫入新資料
-            const placesRef = collection(db, `artifacts/${appId}/public/data/places_v3`);
+        function loadLocalData() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                try { globalData = JSON.parse(savedData); } 
+                catch(e) { globalData = []; }
+            }
 
-            try {
-                const initialCheck = await getDocs(placesRef);
-                if (initialCheck.empty) {
-                    const seedPromises = initialRawData.map((item, index) => {
-                        return setDoc(doc(db, placesRef.path, `seed_${index}`), {
-                            ...item, votes: 0, voters: [], voterNames: {}, createdAt: Date.now()
-                        });
-                    });
-                    await Promise.all(seedPromises);
-                }
-            } catch (e) { console.warn(e); }
-
-            onSnapshot(placesRef, (snapshot) => {
-                globalData = snapshot.docs.map(doc => {
-                    const data = doc.data();
+            // 如果本地沒有資料，則載入初始名單
+            if (!globalData || globalData.length === 0) {
+                globalData = initialRawData.map((item, index) => {
                     return {
-                        id: doc.id,
-                        name: data.name || '未命名',
-                        category: data.category || '未分類',
-                        feature: data.feature || '無說明',
-                        area: data.area || '未知區域',
-                        votes: data.votes || 0,
-                        voters: data.voters || [],
-                        voterNames: data.voterNames || {},
-                        createdAt: data.createdAt || 0,
-                        creatorId: data.creatorId || 'system'
+                        id: `seed_${index}_${generateId()}`,
+                        ...item,
+                        votes: 0,
+                        voters: [],
+                        voterNames: {},
+                        createdAt: Date.now(),
+                        creatorId: 'system'
                     };
                 });
+                saveData();
+            }
 
-                globalData.sort((a, b) => {
-                    if (b.votes !== a.votes) return b.votes - a.votes;
-                    return b.createdAt - a.createdAt; // 同票數時越新越前面
-                });
+            sortData();
+            
+            document.getElementById('loadingState').classList.add('hidden');
+            resultsGrid.classList.remove('hidden');
+            
+            renderFilters();
+            updateUI();
+        }
 
-                document.getElementById('loadingState').classList.add('hidden');
-                resultsGrid.classList.remove('hidden');
-                
-                renderFilters();
-                updateUI();
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(globalData));
+        }
+
+        function sortData() {
+            globalData.sort((a, b) => {
+                if (b.votes !== a.votes) return b.votes - a.votes;
+                return b.createdAt - a.createdAt; // 同票數時越新越前面
             });
         }
 
@@ -359,7 +337,6 @@
                 const heartColor = hasVoted ? "text-[#FF7B93] voted-heart" : "text-gray-300 group-hover:text-[#FF7B93] transition-colors";
                 const isCreator = currentUserId && item.creatorId === currentUserId;
                 
-                // Format voter names
                 const namesArray = Object.values(item.voterNames || {}).filter(n => n);
                 const voterNamesStr = namesArray.length > 0 ? namesArray.join(', ') : '';
                 
@@ -387,7 +364,7 @@
                         </div>
                         <div class="flex items-stretch justify-between gap-3">
                             <button onclick="window.handleVoteClick('${item.id}')" 
-                                    class="group flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg px-4 py-2 hover:bg-[#F4F9F9] hover:border-[#6FB7B7]/30 transition flex-1 sm:flex-none sm:min-w-[80px]">
+                                    class="group flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg py-2 hover:bg-[#F4F9F9] hover:border-[#6FB7B7]/30 transition w-1/2">
                                 <svg class="w-5 h-5 ${heartColor}" fill="${hasVoted ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                                 </svg>
@@ -397,7 +374,7 @@
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' Hong Kong')}" 
                                target="_blank"
                                class="w-1/2 flex items-center justify-center bg-[#6FB7B7] hover:bg-[#5A9999] text-white rounded-lg text-sm font-bold transition shadow-sm py-2 px-2">
-                               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                               <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                Google Map
                             </a>
                         </div>
@@ -412,10 +389,8 @@
             if (!place) return;
 
             if (place.voters.includes(currentUserId)) {
-                // Already voted -> Unvote
                 executeVote(placeId, null, true);
             } else {
-                // Not voted -> Show Name Modal
                 votePlaceId = placeId;
                 const savedName = localStorage.getItem('hk_voter_name') || '';
                 document.getElementById('voteNameInput').value = savedName;
@@ -454,36 +429,27 @@
             closeVoteModal();
         });
 
-        async function executeVote(placeId, voterName, isUnvote) {
-            const place = globalData.find(p => p.id === placeId);
-            const docRef = doc(db, `artifacts/${appId}/public/data/places_v3`, placeId);
+        function executeVote(placeId, voterName, isUnvote) {
+            const placeIndex = globalData.findIndex(p => p.id === placeId);
+            if (placeIndex === -1) return;
             
-            let newVoters = [...place.voters];
-            let newVotes = place.votes;
-            let newVoterNames = { ...(place.voterNames || {}) };
+            const place = globalData[placeIndex];
 
             if (isUnvote) {
-                newVoters = newVoters.filter(uid => uid !== currentUserId);
-                newVotes = Math.max(0, newVotes - 1);
-                delete newVoterNames[currentUserId];
+                place.voters = place.voters.filter(uid => uid !== currentUserId);
+                place.votes = Math.max(0, place.votes - 1);
+                delete place.voterNames[currentUserId];
             } else {
-                if(!newVoters.includes(currentUserId)){
-                    newVoters.push(currentUserId);
-                    newVotes += 1;
+                if(!place.voters.includes(currentUserId)){
+                    place.voters.push(currentUserId);
+                    place.votes += 1;
                 }
-                newVoterNames[currentUserId] = voterName;
+                place.voterNames[currentUserId] = voterName;
             }
 
-            // Optimistic UI Update
-            place.voters = newVoters;
-            place.votes = newVotes;
-            place.voterNames = newVoterNames;
+            sortData();
+            saveData();
             renderCards(); 
-
-            // Cloud Update
-            try {
-                await updateDoc(docRef, { votes: newVotes, voters: newVoters, voterNames: newVoterNames });
-            } catch (error) { console.error("Error updating vote:", error); }
         }
 
         let placeToDelete = null;
@@ -508,18 +474,13 @@
         }
 
         document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
             if (!placeToDelete) return;
-            const btn = document.getElementById('confirmDeleteBtn');
-            const origText = btn.innerHTML;
-            btn.innerHTML = '刪除中...';
-            btn.disabled = true;
-
-            try {
-                await deleteDoc(doc(db, `artifacts/${appId}/public/data/places_v3`, placeToDelete));
-                closeDeleteModal();
-            } catch (error) { console.error("Error deleting:", error); } 
-            finally { btn.innerHTML = origText; btn.disabled = false; }
+            globalData = globalData.filter(p => p.id !== placeToDelete);
+            saveData();
+            updateUI();
+            closeDeleteModal();
         });
 
         function renderChart() {
@@ -541,7 +502,6 @@
                         labels: labels,
                         datasets: [{
                             data: dataVals,
-                            // 水藍/青綠同色系延展
                             backgroundColor: ['#6FB7B7', '#8BC6C6', '#4F8888', '#A5D6D6', '#3A6B6B', '#C0E4E4', '#2B5050', '#7AC2C2'],
                             borderWidth: 2,
                             borderColor: '#ffffff',
@@ -571,40 +531,36 @@
         function setupEventListeners() {
             document.getElementById('searchInput').addEventListener('input', (e) => { searchQuery = e.target.value; updateUI(); });
 
-            const addModal = document.getElementById('addModal');
             document.getElementById('addPlaceBtn').addEventListener('click', () => openFormModal());
             document.getElementById('closeModalBtn').addEventListener('click', closeFormModal);
             document.getElementById('cancelBtn').addEventListener('click', closeFormModal);
             
-            document.getElementById('addForm').addEventListener('submit', async (e) => {
+            document.getElementById('addForm').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const btn = document.getElementById('submitBtn');
-                const origText = btn.innerHTML;
-                btn.innerHTML = '處理中...';
-                btn.disabled = true;
-
                 const savedName = localStorage.getItem('hk_voter_name') || '匿名推薦人';
 
-                try {
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/places_v3`), {
-                        name: document.getElementById('formName').value.trim(),
-                        category: document.getElementById('formCategory').value,
-                        feature: document.getElementById('formFeature').value.trim(),
-                        area: document.getElementById('formArea').value.trim(),
-                        votes: 1, 
-                        voters: currentUserId ? [currentUserId] : [],
-                        voterNames: currentUserId ? { [currentUserId]: savedName } : {},
-                        createdAt: Date.now(),
-                        creatorId: currentUserId || 'system'
-                    });
-                    document.getElementById('addForm').reset();
-                    closeFormModal();
-                    document.getElementById('searchInput').value = '';
-                    searchQuery = ''; currentCategory = 'all'; renderFilters();
-                } catch (error) {
-                    const err = document.getElementById('formError');
-                    err.innerText = "新增失敗，請確認網路連線。"; err.classList.remove('hidden');
-                } finally { btn.innerHTML = origText; btn.disabled = false; }
+                const newPlace = {
+                    id: `local_${generateId()}`,
+                    name: document.getElementById('formName').value.trim(),
+                    category: document.getElementById('formCategory').value,
+                    feature: document.getElementById('formFeature').value.trim(),
+                    area: document.getElementById('formArea').value.trim(),
+                    votes: 1, 
+                    voters: [currentUserId],
+                    voterNames: { [currentUserId]: savedName },
+                    createdAt: Date.now(),
+                    creatorId: currentUserId
+                };
+
+                globalData.push(newPlace);
+                sortData();
+                saveData();
+
+                document.getElementById('addForm').reset();
+                closeFormModal();
+                document.getElementById('searchInput').value = '';
+                searchQuery = ''; currentCategory = 'all'; renderFilters();
+                updateUI();
             });
         }
 
@@ -621,7 +577,7 @@
             const addContent = document.getElementById('addModalContent');
             addContent.classList.remove('scale-100');
             addContent.classList.add('scale-95');
-            setTimeout(() => { addModal.classList.add('hidden'); document.getElementById('formError').classList.add('hidden'); }, 200);
+            setTimeout(() => { addModal.classList.add('hidden'); }, 200);
             document.body.style.overflow = '';
         }
 
