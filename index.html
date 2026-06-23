@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港美食與景點</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FAFCFC; /* 極淡清爽底色 */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(111, 183, 183, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(111, 183, 183, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #334155;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        }
+
+        .card-shadow:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(111, 183, 183, 0.2), 0 4px 6px -2px rgba(111, 183, 183, 0.1);
+        }
+
+        /* 核心水藍色系替換 */
+        .hk-accent-primary { background-color: #6FB7B7; } 
+        .hk-tag { background-color: #E2F1F1; color: #3A7A7A; } 
+        
+        /* Heart Animation */
+        @keyframes heartPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .voted-heart { animation: heartPulse 0.3s ease-in-out; color: #FF7B93; } /* 保持溫暖的粉紅色作為投票強調色 */
+        
+        /* Hide scrollbar for filters */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="pb-12 relative min-h-screen">
+
+    <header class="hk-accent-primary text-white py-6 px-4 text-center mb-8 shadow-md">
+        <h1 class="text-2xl md:text-3xl font-bold flex items-center justify-center gap-3">
+            <span>🇭🇰</span> 香港美食與景點
+        </h1>
+    </header>
+
+    <main class="container mx-auto px-4 max-w-6xl">
+        
+        <section class="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <h2 class="text-2xl font-bold mb-2 text-center text-gray-700">清單分類概覽</h2>
+            <p class="text-gray-500 text-sm text-center mb-6">即時更新的分類數據</p>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
+
+        <section class="mb-8 sticky top-4 z-10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-md border border-gray-100">
+                <div class="flex-1 flex gap-2">
+                    <input type="text" id="searchInput" placeholder="搜尋名稱、區域或特色..." 
+                           class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6FB7B7] transition">
+                    <button id="addPlaceBtn" class="flex-shrink-0 bg-[#6FB7B7] hover:bg-[#5A9999] text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-sm">
+                        <span>➕</span><span class="hidden sm:inline">推薦新店家</span>
+                    </button>
+                </div>
+                <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar" id="filterButtons">
+                    <!-- Filters injected here -->
+                </div>
+            </div>
+        </section>
+
+        <div id="loadingState" class="text-center py-20 flex flex-col items-center justify-center space-y-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6FB7B7]"></div>
+            <p class="text-gray-500">正在連接雲端資料庫，載入 34 筆最新清單...</p>
+        </div>
+
+        <section id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+            <!-- Cards injected here -->
+        </section>
+
+        <div id="noResults" class="hidden text-center py-20 bg-white/80 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <p class="text-xl text-gray-500">找不到符合條件的店家 🧐</p>
+            <p class="text-gray-400 mt-2">試試其他關鍵字，或是點擊上方按鈕新增它！</p>
+        </div>
+    </main>
+
+    <!-- Add Place Modal -->
+    <div id="addModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-[#FAFCFC] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transform scale-95 transition-transform" id="addModalContent">
+            <div class="hk-accent-primary text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold">新增私房推薦</h3>
+                <button id="closeModalBtn" class="text-white hover:text-gray-200 transition text-2xl leading-none">&times;</button>
+            </div>
+            <form id="addForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">店家/景點名稱 *</label>
+                    <input type="text" id="formName" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-[#6FB7B7] focus:border-[#6FB7B7]" placeholder="例如：澳洲牛奶公司">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">所屬類別 *</label>
+                    <select id="formCategory" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-[#6FB7B7] focus:border-[#6FB7B7]">
+                        <option value="燒味與正餐">燒味與正餐</option>
+                        <option value="茶餐廳與點心" selected>茶餐廳與點心</option>
+                        <option value="烘焙與甜品">烘焙與甜品</option>
+                        <option value="咖啡與茶飲">咖啡與茶飲</option>
+                        <option value="美式餐點">美式餐點</option>
+                        <option value="酒吧與夜生活">酒吧與夜生活</option>
+                        <option value="經典體驗">經典體驗</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">特色或必吃推薦 *</label>
+                    <textarea id="formFeature" required rows="2" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-[#6FB7B7] focus:border-[#6FB7B7]" placeholder="例如：超滑嫩神級炒蛋、蛋白燉鮮奶"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">鄰近地鐵站 / 區域 *</label>
+                    <input type="text" id="formArea" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:ring-[#6FB7B7] focus:border-[#6FB7B7]" placeholder="例如：佐敦站">
+                </div>
+                
+                <div id="formError" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-md border border-red-100"></div>
+                
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-200">
+                    <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition">取消</button>
+                    <button type="submit" id="submitBtn" class="px-6 py-2 bg-[#6FB7B7] hover:bg-[#5A9999] text-white rounded-lg transition shadow-md flex items-center gap-2">
+                        <span>送出推薦</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Voter Name Modal -->
+    <div id="voteModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-[#FAFCFC] rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl transform scale-95 transition-transform" id="voteModalContent">
+            <div class="w-16 h-16 bg-[#E2F1F1] text-[#6FB7B7] rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">留下您的投票足跡</h3>
+            <p class="text-gray-500 mb-4 text-sm">請輸入您的暱稱，讓大家知道是誰推薦了這間好店！</p>
+            <form id="voteForm" class="space-y-4">
+                <input type="text" id="voteNameInput" required class="w-full px-4 py-2 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6FB7B7] focus:outline-none" placeholder="輸入您的暱稱">
+                <div class="flex gap-3 justify-center">
+                    <button type="button" id="cancelVoteBtn" class="w-1/2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">取消</button>
+                    <button type="submit" class="w-1/2 px-4 py-2 bg-[#6FB7B7] hover:bg-[#5A9999] text-white rounded-lg transition font-medium shadow-sm">確認投票</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl transform scale-95 transition-transform" id="confirmModalContent">
+            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">確定要刪除嗎？</h3>
+            <p class="text-gray-500 mb-6 text-sm">刪除後將無法復原，包含所有的投票紀錄都會一併移除。</p>
+            <div class="flex gap-3 justify-center">
+                <button id="cancelDeleteBtn" class="w-1/2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">取消</button>
+                <button id="confirmDeleteBtn" class="w-1/2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium shadow-sm">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hk-explorer-coop';
+        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        
+        let firebaseConfig = {};
+        try { firebaseConfig = JSON.parse(firebaseConfigStr); } 
+        catch (e) { firebaseConfig = { projectId: "dummy" }; }
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUserId = null;
+        let globalData = [];
+        let currentCategory = "all";
+        let searchQuery = "";
+        let chartInstance = null;
+        let votePlaceId = null;
+
+        // 完整的初始資料 (新增榕記陳皮燒鵝，Bakehouse已包含其中)
+        const initialRawData = [
+            { name: "榕記陳皮燒鵝", category: "燒味與正餐", feature: "尖沙咀人氣名店，招牌陳皮燒鵝皮脆肉嫩，帶有獨特陳皮幽香", area: "尖沙咀站" },
+            { name: "竺扶大班燒味", category: "燒味與正餐", feature: "以高質素燒臘著稱，脆皮燒肉與叉燒深受好評", area: "灣仔站" },
+            { name: "甘牌燒鵝", category: "燒味與正餐", feature: "連續多年榮獲米其林一星，招牌燒鵝皮脆肉嫩", area: "灣仔站" },
+            { name: "九記牛腩", category: "燒味與正餐", feature: "中環排隊名店，清湯牛腩與咖喱牛腩極其入味", area: "上環站 / 中環站" },
+            { name: "麥文記麵家", category: "燒味與正餐", feature: "佐敦老字號麵家，全蝦雲吞皮薄透光、湯頭鮮甜", area: "佐敦站" },
+            { name: "金華冰廳", category: "茶餐廳與點心", feature: "號稱全港第一的得獎菠蘿油，外皮酥碎", area: "太子站 / 旺角站" },
+            { name: "澳洲牛奶公司", category: "茶餐廳與點心", feature: "超滑嫩神級炒蛋、蛋白燉鮮奶與極速點餐服務", area: "佐敦站" },
+            { name: "華嫂冰室", category: "茶餐廳與點心", feature: "明星熱愛，招牌菠蘿包、番茄豬扒雞翼湯通粉", area: "尖沙咀/灣仔/元朗" },
+            { name: "蘭芳園", category: "茶餐廳與點心", feature: "絲襪奶茶始祖，傳統鐵皮檔風味，蔥油雞扒撈丁", area: "中環站 / 尖沙咀" },
+            { name: "一點心", category: "茶餐廳與點心", feature: "平價高水準米其林推薦港點，蝦餃、燒賣現點現蒸", area: "太子站" },
+            { name: "祥興記上海生煎包", category: "茶餐廳與點心", feature: "米其林必比登推薦，生煎包底層焦脆、頂部皮薄多汁", area: "尖沙咀/中環" },
+            { name: "旺記冰室", category: "茶餐廳與點心", feature: "主打無敵滑蛋系列的摩登冰室，滑蛋叉燒飯必吃", area: "尖沙咀站 / 灣仔" },
+            { name: "順興茶餐廳", category: "茶餐廳與點心", feature: "大坑著名滑蛋飯名店，大牌檔風味滑蛋三寶飯", area: "天后站 (大坑)" },
+            { name: "翠華餐廳", category: "茶餐廳與點心", feature: "老牌連鎖茶餐廳，奶油豬仔包與香滑奶茶品質穩定", area: "中環站 / 各區皆有" },
+            { name: "Wah Lok Cafe", category: "茶餐廳與點心", feature: "華樂冰室，隱藏在中環上環交界的高評價懷舊老字號冰室", area: "上環站" },
+            { name: "bakehouse", category: "烘焙與甜品", feature: "全港爆紅的招牌酸種蛋撻必買，酥皮極具層次", area: "中環/尖沙咀/灣仔" },
+            { name: "富豪雪糕", category: "烘焙與甜品", feature: "經典紅色移動雪糕車，播放音樂，必吃香滑軟雪糕", area: "尖沙咀/中環碼頭等" },
+            { name: "佳佳甜品", category: "烘焙與甜品", feature: "米其林推薦傳統糖水，芝麻糊、香滑核桃露極細緻", area: "佐敦站" },
+            { name: "研香甜品", category: "烘焙與甜品", feature: "主打傳統與新式創意結合的濃郁開心果糊、焙茶糊", area: "尖沙咀站" },
+            { name: "MESSINA", category: "烘焙與甜品", feature: "來自澳洲高人氣手工義式冰淇淋，常推香港限定口味", area: "中環站 (石板街)" },
+            { name: "檸檬王", category: "烘焙與甜品", feature: "上環知名必買伴手禮，加入甘草粉的甘草檸檬清爽生津", area: "上環站" },
+            { name: "午夜麵包俱樂部", category: "烘焙與甜品", feature: "主打特色精緻手工烘焙與高質感麵包點心", area: "市區 / 多點寄賣" },
+            { name: "% Arabica", category: "咖啡與茶飲", feature: "堅尼地城分店坐擁絕美海景窗，咖啡香濃、拍照極美", area: "堅尼地城站" },
+            { name: "FINEPRINT", category: "咖啡與茶飲", feature: "知名質感精品咖啡，全天候早午餐與酸種麵包極受歡迎", area: "中環站 / 蘇豪區" },
+            { name: "NOC Coffee Co.", category: "咖啡與茶飲", feature: "極簡純白風格的在地精品咖啡，兼具極佳採光與輕食", area: "上環/西營盤等" },
+            { name: "ON THE HILL COFFEE BAR", category: "咖啡與茶飲", feature: "具備獨特美學與文青氛圍的咖啡店 (大館等皆有分店)", area: "中環站 (大館)" },
+            { name: "ROOTDOWN", category: "咖啡與茶飲", feature: "充滿設計感與音樂氛圍的特色咖啡與餐酒空間", area: "西營盤站" },
+            { name: "阿一檸檬茶", category: "咖啡與茶飲", feature: "主打手打香水檸檬茶的清爽系飲品，解膩推薦", area: "尖沙咀站" },
+            { name: "Shake Shack", category: "美式餐點", feature: "來自紐約的經典漢堡，空間寬敞，適合前往大嶼山前充飢", area: "東涌站 (東薈城)" },
+            { name: "Bar Leone", category: "酒吧與夜生活", feature: "榮獲亞洲 50 最佳酒吧第一名！主打義式風格雞尾酒", area: "中環站" },
+            { name: "DarkSide", category: "酒吧與夜生活", feature: "瑰麗酒店內的頂級酒吧，主打黑巧克力調酒與現場爵士樂", area: "尖東站 (瑰麗酒店)" },
+            { name: "The Iron Fairies", category: "酒吧與夜生活", feature: "魔幻鐵匠主題吧，天花板掛滿萬隻手工蝴蝶，氛圍神祕", area: "中環站" },
+            { name: "The Diplomat", category: "酒吧與夜生活", feature: "高級美式經典酒吧，頂級和牛漢堡被譽為全港第一", area: "中環站" },
+            { name: "蘭桂坊", category: "酒吧與夜生活", feature: "香港最富盛名的夜生活與酒吧聚集街區，異國風情濃厚", area: "中環站" },
+            { name: "天星小輪", category: "經典體驗", feature: "橫跨維多利亞港的百年渡輪，欣賞兩岸天際線最佳方式", area: "尖沙咀碼頭/中環碼頭" }
+        ];
+
+        const resultsGrid = document.getElementById('resultsGrid');
+        const filterContainer = document.getElementById('filterButtons');
+        
+        async function init() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUserId = auth.currentUser.uid;
+                
+                setupEventListeners();
+                await syncDataFromCloud();
+            } catch (error) {
+                document.getElementById('loadingState').innerHTML = `<p class="text-red-500">系統連線失敗。 (${error.message})</p>`;
+            }
+        }
+
+        async function syncDataFromCloud() {
+            // 使用全新的路徑 places_v3 強制系統寫入新資料
+            const placesRef = collection(db, `artifacts/${appId}/public/data/places_v3`);
+
+            try {
+                const initialCheck = await getDocs(placesRef);
+                if (initialCheck.empty) {
+                    const seedPromises = initialRawData.map((item, index) => {
+                        return setDoc(doc(db, placesRef.path, `seed_${index}`), {
+                            ...item, votes: 0, voters: [], voterNames: {}, createdAt: Date.now()
+                        });
+                    });
+                    await Promise.all(seedPromises);
+                }
+            } catch (e) { console.warn(e); }
+
+            onSnapshot(placesRef, (snapshot) => {
+                globalData = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        name: data.name || '未命名',
+                        category: data.category || '未分類',
+                        feature: data.feature || '無說明',
+                        area: data.area || '未知區域',
+                        votes: data.votes || 0,
+                        voters: data.voters || [],
+                        voterNames: data.voterNames || {},
+                        createdAt: data.createdAt || 0,
+                        creatorId: data.creatorId || 'system'
+                    };
+                });
+
+                globalData.sort((a, b) => {
+                    if (b.votes !== a.votes) return b.votes - a.votes;
+                    return b.createdAt - a.createdAt; // 同票數時越新越前面
+                });
+
+                document.getElementById('loadingState').classList.add('hidden');
+                resultsGrid.classList.remove('hidden');
+                
+                renderFilters();
+                updateUI();
+            });
+        }
+
+        function updateUI() {
+            renderCards();
+            renderChart();
+        }
+
+        function renderFilters() {
+            const dbCategories = [...new Set(globalData.map(item => item.category))];
+            const allCategories = ["all", ...dbCategories];
+            const catLabels = { "all": "全部", "燒味與正餐": "燒味正餐", "茶餐廳與點心": "茶餐廳/點心", "烘焙與甜品": "甜品/烘焙", "咖啡與茶飲": "咖啡/茶飲", "美式餐點": "美式速食", "酒吧與夜生活": "酒吧微醺", "經典體驗": "經典體驗" };
+
+            filterContainer.innerHTML = allCategories.map(cat => `
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap border
+                        ${cat === currentCategory 
+                            ? 'bg-[#6FB7B7] text-white border-[#6FB7B7] shadow-sm' 
+                            : 'bg-white text-gray-600 border-gray-200 hover:bg-[#F4F9F9] hover:text-[#5A9999]'}" 
+                        data-category="${cat}">
+                    ${catLabels[cat] || cat}
+                </button>
+            `).join('');
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentCategory = btn.dataset.category;
+                    renderFilters();
+                    updateUI();
+                });
+            });
+        }
+
+        function renderCards() {
+            const sq = searchQuery.toLowerCase().trim();
+            const filteredData = globalData.filter(item => {
+                const matchCat = currentCategory === "all" || item.category === currentCategory;
+                const matchSearch = item.name.toLowerCase().includes(sq) || item.feature.toLowerCase().includes(sq) || item.area.toLowerCase().includes(sq);
+                return matchCat && matchSearch;
+            });
+
+            if (filteredData.length === 0) {
+                resultsGrid.innerHTML = "";
+                document.getElementById('noResults').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('noResults').classList.add('hidden');
+            
+            resultsGrid.innerHTML = filteredData.map(item => {
+                const hasVoted = currentUserId && item.voters.includes(currentUserId);
+                const heartColor = hasVoted ? "text-[#FF7B93] voted-heart" : "text-gray-300 group-hover:text-[#FF7B93] transition-colors";
+                const isCreator = currentUserId && item.creatorId === currentUserId;
+                
+                // Format voter names
+                const namesArray = Object.values(item.voterNames || {}).filter(n => n);
+                const voterNamesStr = namesArray.length > 0 ? namesArray.join(', ') : '';
+                
+                return `
+                <article class="bg-white rounded-xl overflow-hidden card-shadow flex flex-col relative border border-gray-100 group">
+                    ${isCreator ? `
+                        <button onclick="window.openDeleteModal('${item.id}')" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 hover:bg-red-50 transition bg-white/80 backdrop-blur rounded-full p-1.5 shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100 z-10" title="刪除此推薦">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    ` : ''}
+                    <div class="p-5 flex-1 mt-2">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs font-bold px-2 py-1 rounded hk-tag">${item.category}</span>
+                            <span class="text-xs text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded flex items-center gap-1 border border-gray-100">
+                                📍 ${item.area}
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800 pr-10 leading-tight">${item.name}</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">${item.feature}</p>
+                    </div>
+                    
+                    <div class="px-5 pb-5 mt-auto">
+                        <div class="text-xs text-gray-500 mb-3 min-h-[16px] truncate" title="${voterNamesStr}">
+                            ${voterNamesStr ? `<span class="text-[#FF7B93]">❤️</span> 支持者: <span class="text-[#5A9999]">${voterNamesStr}</span>` : '尚無人投票，快來成為第一個！'}
+                        </div>
+                        <div class="flex items-stretch justify-between gap-3">
+                            <button onclick="window.handleVoteClick('${item.id}')" 
+                                    class="group flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg px-4 py-2 hover:bg-[#F4F9F9] hover:border-[#6FB7B7]/30 transition flex-1 sm:flex-none sm:min-w-[80px]">
+                                <svg class="w-5 h-5 ${heartColor}" fill="${hasVoted ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                                <span class="text-xs font-bold text-gray-600 mt-1">${item.votes} 票</span>
+                            </button>
+                            
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' Hong Kong')}" 
+                               target="_blank"
+                               class="w-1/2 flex items-center justify-center bg-[#6FB7B7] hover:bg-[#5A9999] text-white rounded-lg text-sm font-bold transition shadow-sm py-2 px-2">
+                               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                               Google Map
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            `}).join('');
+        }
+
+        window.handleVoteClick = function(placeId) {
+            if (!currentUserId) return;
+            const place = globalData.find(p => p.id === placeId);
+            if (!place) return;
+
+            if (place.voters.includes(currentUserId)) {
+                // Already voted -> Unvote
+                executeVote(placeId, null, true);
+            } else {
+                // Not voted -> Show Name Modal
+                votePlaceId = placeId;
+                const savedName = localStorage.getItem('hk_voter_name') || '';
+                document.getElementById('voteNameInput').value = savedName;
+                
+                const vModal = document.getElementById('voteModal');
+                const vContent = document.getElementById('voteModalContent');
+                vModal.classList.remove('hidden');
+                setTimeout(() => {
+                    vContent.classList.remove('scale-95');
+                    vContent.classList.add('scale-100');
+                }, 10);
+                document.body.style.overflow = 'hidden';
+            }
+        };
+
+        function closeVoteModal() {
+            const vModal = document.getElementById('voteModal');
+            const vContent = document.getElementById('voteModalContent');
+            vContent.classList.remove('scale-100');
+            vContent.classList.add('scale-95');
+            setTimeout(() => {
+                vModal.classList.add('hidden');
+                votePlaceId = null;
+            }, 200);
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('cancelVoteBtn').addEventListener('click', closeVoteModal);
+        
+        document.getElementById('voteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('voteNameInput').value.trim();
+            if (!name) return;
+            localStorage.setItem('hk_voter_name', name);
+            executeVote(votePlaceId, name, false);
+            closeVoteModal();
+        });
+
+        async function executeVote(placeId, voterName, isUnvote) {
+            const place = globalData.find(p => p.id === placeId);
+            const docRef = doc(db, `artifacts/${appId}/public/data/places_v3`, placeId);
+            
+            let newVoters = [...place.voters];
+            let newVotes = place.votes;
+            let newVoterNames = { ...(place.voterNames || {}) };
+
+            if (isUnvote) {
+                newVoters = newVoters.filter(uid => uid !== currentUserId);
+                newVotes = Math.max(0, newVotes - 1);
+                delete newVoterNames[currentUserId];
+            } else {
+                if(!newVoters.includes(currentUserId)){
+                    newVoters.push(currentUserId);
+                    newVotes += 1;
+                }
+                newVoterNames[currentUserId] = voterName;
+            }
+
+            // Optimistic UI Update
+            place.voters = newVoters;
+            place.votes = newVotes;
+            place.voterNames = newVoterNames;
+            renderCards(); 
+
+            // Cloud Update
+            try {
+                await updateDoc(docRef, { votes: newVotes, voters: newVoters, voterNames: newVoterNames });
+            } catch (error) { console.error("Error updating vote:", error); }
+        }
+
+        let placeToDelete = null;
+        window.openDeleteModal = function(placeId) {
+            placeToDelete = placeId;
+            document.getElementById('confirmModal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('confirmModalContent').classList.remove('scale-95');
+                document.getElementById('confirmModalContent').classList.add('scale-100');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        };
+
+        function closeDeleteModal() {
+            document.getElementById('confirmModalContent').classList.remove('scale-100');
+            document.getElementById('confirmModalContent').classList.add('scale-95');
+            setTimeout(() => {
+                document.getElementById('confirmModal').classList.add('hidden');
+                placeToDelete = null;
+            }, 200);
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+            if (!placeToDelete) return;
+            const btn = document.getElementById('confirmDeleteBtn');
+            const origText = btn.innerHTML;
+            btn.innerHTML = '刪除中...';
+            btn.disabled = true;
+
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/places_v3`, placeToDelete));
+                closeDeleteModal();
+            } catch (error) { console.error("Error deleting:", error); } 
+            finally { btn.innerHTML = origText; btn.disabled = false; }
+        });
+
+        function renderChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            const counts = {};
+            globalData.forEach(item => { counts[item.category] = (counts[item.category] || 0) + 1; });
+
+            const labels = Object.keys(counts);
+            const dataVals = Object.values(counts);
+
+            if (chartInstance) {
+                chartInstance.data.labels = labels;
+                chartInstance.data.datasets[0].data = dataVals;
+                chartInstance.update();
+            } else {
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataVals,
+                            // 水藍/青綠同色系延展
+                            backgroundColor: ['#6FB7B7', '#8BC6C6', '#4F8888', '#A5D6D6', '#3A6B6B', '#C0E4E4', '#2B5050', '#7AC2C2'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 12, family: "'Noto Sans TC', sans-serif" } } },
+                            tooltip: {
+                                backgroundColor: 'rgba(58, 107, 107, 0.9)', titleFont: { family: "'Noto Sans TC', sans-serif" }, bodyFont: { family: "'Noto Sans TC', sans-serif" },
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = ((context.raw / total) * 100).toFixed(1);
+                                        return ` ${context.label}: ${context.raw} 家 (${pct}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', (e) => { searchQuery = e.target.value; updateUI(); });
+
+            const addModal = document.getElementById('addModal');
+            document.getElementById('addPlaceBtn').addEventListener('click', () => openFormModal());
+            document.getElementById('closeModalBtn').addEventListener('click', closeFormModal);
+            document.getElementById('cancelBtn').addEventListener('click', closeFormModal);
+            
+            document.getElementById('addForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('submitBtn');
+                const origText = btn.innerHTML;
+                btn.innerHTML = '處理中...';
+                btn.disabled = true;
+
+                const savedName = localStorage.getItem('hk_voter_name') || '匿名推薦人';
+
+                try {
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/places_v3`), {
+                        name: document.getElementById('formName').value.trim(),
+                        category: document.getElementById('formCategory').value,
+                        feature: document.getElementById('formFeature').value.trim(),
+                        area: document.getElementById('formArea').value.trim(),
+                        votes: 1, 
+                        voters: currentUserId ? [currentUserId] : [],
+                        voterNames: currentUserId ? { [currentUserId]: savedName } : {},
+                        createdAt: Date.now(),
+                        creatorId: currentUserId || 'system'
+                    });
+                    document.getElementById('addForm').reset();
+                    closeFormModal();
+                    document.getElementById('searchInput').value = '';
+                    searchQuery = ''; currentCategory = 'all'; renderFilters();
+                } catch (error) {
+                    const err = document.getElementById('formError');
+                    err.innerText = "新增失敗，請確認網路連線。"; err.classList.remove('hidden');
+                } finally { btn.innerHTML = origText; btn.disabled = false; }
+            });
+        }
+
+        function openFormModal() {
+            const addModal = document.getElementById('addModal');
+            const addContent = document.getElementById('addModalContent');
+            addModal.classList.remove('hidden');
+            setTimeout(() => { addContent.classList.remove('scale-95'); addContent.classList.add('scale-100'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFormModal() {
+            const addModal = document.getElementById('addModal');
+            const addContent = document.getElementById('addModalContent');
+            addContent.classList.remove('scale-100');
+            addContent.classList.add('scale-95');
+            setTimeout(() => { addModal.classList.add('hidden'); document.getElementById('formError').classList.add('hidden'); }, 200);
+            document.body.style.overflow = '';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
