@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -131,7 +130,6 @@
                 <span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full font-bold text-sm shadow-sm border border-blue-200">✈️ 7/9-7/12 出國玩要快樂 🎉</span>
             </div>
             
-            <!-- 頂部浮動膠囊導航選單 (Icon Style) -->
             <div class="sticky top-2 z-50 flex justify-center w-full mt-2 transition-all duration-300">
                 <nav class="bg-white/90 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-gray-100/50 flex items-center space-x-1 overflow-x-auto max-w-full hide-scrollbar ring-1 ring-black/5">
                     
@@ -159,7 +157,6 @@
             </div>
         </header>
 
-        <!-- 全域狀態提示 -->
         <div class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[60] pointer-events-none">
             <transition name="fade">
                 <div v-if="toastMsg" class="bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center bg-opacity-90 backdrop-blur-sm">
@@ -172,7 +169,6 @@
         <div class="relative w-full px-4 md:px-8 mt-2">
             <transition name="fade">
                 
-                <!-- Tab 1: 行程表 -->
                 <div v-if="activeTab === 'schedule'" key="schedule" class="w-full">
                     <div class="space-y-5">
                         <div v-for="(day, index) in itinerary" :key="index" class="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
@@ -188,7 +184,6 @@
                                         <span class="time-badge">{{ step.time }}</span>
                                     </div>
                                     <div class="flex-1 mt-1 sm:mt-0">
-                                        <!-- 使用 v-html 渲染包含連結的文字 -->
                                         <h3 class="text-gray-700 leading-relaxed text-sm md:text-base font-medium" v-html="step.desc"></h3>
                                     </div>
                                 </li>
@@ -197,7 +192,6 @@
                     </div>
                 </div>
 
-                <!-- Tab 2: 天氣 -->
                 <div v-else-if="activeTab === 'weather'" key="weather" class="w-full">
                     <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm">
                         <h3 class="text-indigo-800 font-black mb-5 flex items-center text-xl border-b border-indigo-50 pb-3">
@@ -228,7 +222,6 @@
                     </div>
                 </div>
 
-                <!-- Tab 3: 注意事項 -->
                 <div v-else-if="activeTab === 'notes'" key="notes" class="w-full">
                     <div class="space-y-5">
                         <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-rose-400">
@@ -273,12 +266,9 @@
                     </div>
                 </div>
 
-                <!-- Tab 4: 記帳花費 -->
                 <div v-else-if="activeTab === 'wallet'" key="wallet" class="w-full">
                     
-                    <!-- 頂部總計卡片 (復刻圖片深藍色卡片) -->
                     <div class="bg-wallet-cardBg text-white rounded-[1.5rem] p-6 shadow-[0_10px_30px_-10px_rgba(41,91,122,0.6)] mb-6 relative overflow-hidden">
-                        <!-- 裝飾光影 -->
                         <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
                         
                         <div class="relative z-10">
@@ -296,10 +286,8 @@
                                 </div>
                             </div>
                             
-                            <!-- 分隔線 -->
                             <div class="h-px w-full bg-white/20 mb-4"></div>
                             
-                            <!-- 匯率設定區 -->
                             <div class="flex justify-between items-center text-sm font-medium text-blue-100/80">
                                 <div class="flex items-center">
                                     <svg class="w-4 h-4 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
@@ -310,7 +298,6 @@
                                 </button>
                             </div>
                             
-                            <!-- 展開的匯率修改框 -->
                             <div v-if="showRateSetting" class="mt-4 bg-black/20 p-3 rounded-xl flex items-center justify-between border border-white/10 transition-all">
                                 <span class="text-sm font-bold text-white/90">HKD 兌 TWD：</span>
                                 <input type="number" step="0.1" v-model="exchangeRate" class="w-24 bg-white/10 border border-white/30 text-white rounded px-2 py-1 text-center font-bold font-num focus:outline-none focus:border-white/60">
@@ -318,7 +305,6 @@
                         </div>
                     </div>
 
-                    <!-- 記帳列表 (復刻圖片白色卡片與圖示) -->
                     <div class="bg-white rounded-[1.5rem] shadow-sm pb-4 min-h-[300px]">
                         <div v-if="expenses.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
                             <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-3xl mb-4 text-gray-300">📝</div>
@@ -330,26 +316,28 @@
                                  class="flex items-center justify-between p-4 mx-2 border-b border-gray-100/80 last:border-0 relative group">
                                 
                                 <div class="flex items-center flex-1 min-w-0 pr-4">
-                                    <!-- 類別圖示 -->
                                     <div :class="[getCategoryColor(exp.category), 'w-11 h-11 rounded-full flex items-center justify-center text-white text-lg mr-4 flex-shrink-0 shadow-sm']">
                                         {{ getCategoryIcon(exp.category) }}
                                     </div>
-                                    <!-- 明細內容 -->
-                                    <div class="min-w-0">
-                                        <div class="font-black text-gray-800 text-base md:text-lg mb-0.5 truncate">{{ exp.name }}</div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-black text-gray-800 text-base md:text-lg mb-0.5 truncate flex items-center">
+                                            {{ exp.name }}
+                                            <span class="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold" 
+                                                  :class="exp.paymentMethod === 'credit' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'">
+                                                {{ exp.paymentMethod === 'credit' ? '💳 刷卡' : '💵 現金' }}
+                                            </span>
+                                        </div>
                                         <div class="text-[11px] text-gray-400 font-bold flex items-center">
                                             {{ exp.date }} • {{ getCategoryName(exp.category) }}
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <!-- 金額顯示 -->
                                 <div class="text-right flex-shrink-0">
                                     <div class="font-black text-gray-800 text-lg font-num">HK${{ exp.amountHKD }}</div>
                                     <div class="text-[11px] text-gray-400 font-bold font-num mt-0.5">≈ NT${{ exp.amountTWD.toLocaleString() }}</div>
                                 </div>
 
-                                <!-- 刪除按鈕 (Hover 顯示或點擊展開，此處用簡單的絕對定位顯示於右側) -->
                                 <button @click="confirmDelete(exp.id)" class="absolute right-4 bg-red-100 text-red-500 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity md:hover:bg-red-500 md:hover:text-white" title="刪除">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
@@ -357,14 +345,11 @@
                         </div>
                     </div>
 
-                    <!-- 懸浮新增按鈕 (FAB) -->
                     <button @click="openAddModal" class="fixed bottom-6 right-6 w-[56px] h-[56px] bg-wallet-fab rounded-full shadow-[0_4px_15px_rgba(110,194,144,0.5)] flex items-center justify-center text-white text-2xl z-40 transition-transform active:scale-90 hover:scale-105">
                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
                     </button>
 
-                    <!-- 新增記帳 面板 (由下方滑出) -->
                     <transition name="fade">
-                        <!-- 遮罩 -->
                         <div v-if="isAddModalOpen" @click="closeAddModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"></div>
                     </transition>
                     
@@ -375,7 +360,6 @@
                             <h3 class="text-xl font-black text-gray-800 mb-6">新增記帳</h3>
                             
                             <div class="space-y-5">
-                                <!-- 分類選擇 -->
                                 <div class="flex space-x-3 overflow-x-auto pb-2 hide-scrollbar">
                                     <button v-for="cat in categories" :key="cat.id" 
                                             @click="newExpense.category = cat.id"
@@ -387,27 +371,60 @@
                                     </button>
                                 </div>
 
-                                <!-- 品項名稱 -->
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-1.5">品項名稱</label>
-                                    <input type="text" v-model="newExpense.name" placeholder="例如：Js拉麵、地鐵" class="w-full bg-gray-50 px-4 py-3 rounded-xl border-none focus:ring-2 focus:ring-wallet-fab/50 font-bold text-gray-800 placeholder-gray-400 transition-shadow">
+                                    <input type="text" v-model="newExpense.name" placeholder="例如：Js拉麵、地鐵" class="w-full bg-gray-50 px-4 py-3 rounded-xl border-none focus:ring-2 focus:ring-[#334155]/50 font-bold text-gray-800 placeholder-gray-400 transition-shadow">
                                 </div>
 
-                                <!-- 金額與計算機 -->
+                                <div class="flex space-x-3 mb-4">
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-bold text-gray-500 mb-1.5">消費日期</label>
+                                        <input type="date" v-model="newExpense.date" class="w-full bg-gray-50 px-3 py-2.5 rounded-xl border-none focus:ring-2 focus:ring-[#334155]/50 font-bold text-gray-800 transition-shadow">
+                                    </div>
+                                    
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-bold text-gray-500 mb-1.5">付款方式</label>
+                                        <div class="flex bg-gray-50 rounded-xl overflow-hidden p-1 border border-gray-100">
+                                            <button @click="newExpense.paymentMethod = 'cash'" :class="newExpense.paymentMethod === 'cash' ? 'bg-[#334155] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-200'" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition-all duration-200">
+                                                💵 現金
+                                            </button>
+                                            <button @click="newExpense.paymentMethod = 'credit'" :class="newExpense.paymentMethod === 'credit' ? 'bg-[#334155] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-200'" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition-all duration-200">
+                                                💳 刷卡
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="relative">
-                                    <label class="block text-xs font-bold text-gray-500 mb-1.5 flex justify-between">
-                                        <span>港幣金額 (支援加減乘除)</span>
-                                        <span v-if="calculatedTWD > 0" class="text-wallet-fab">≈ NT$ {{ calculatedTWD.toLocaleString() }}</span>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5 flex justify-between items-end">
+                                        <span>輸入金額 (支援加減乘除)</span>
+                                        <span v-if="calculatedInput > 0" class="text-[#84C1FF]">
+                                            ≈ {{ newExpense.currency === 'HKD' ? 'NT$' : 'HK$' }} {{ newExpense.currency === 'HKD' ? calculatedTWD.toLocaleString() : calculatedHKD.toFixed(1) }}
+                                        </span>
                                     </label>
-                                    <div class="flex bg-gray-50 rounded-xl focus-within:ring-2 focus-within:ring-wallet-fab/50 transition-shadow overflow-hidden">
-                                        <div class="px-4 py-3 text-gray-400 font-bold font-num bg-gray-100 flex items-center border-r border-gray-200">HK$</div>
-                                        <input type="text" inputmode="decimal" v-model="newExpense.amountInput" @keyup.enter="calculateAmount" placeholder="如 500+200*3" class="w-full bg-transparent px-4 py-3 border-none focus:ring-0 font-bold text-gray-800 font-num text-lg placeholder-gray-400">
-                                        <button @click="calculateAmount" class="px-4 text-gray-500 font-black text-xl hover:bg-gray-200 transition-colors bg-gray-100 border-l border-gray-200">=</button>
+                                    
+                                    <div class="flex flex-col bg-gray-50 rounded-xl focus-within:ring-2 focus-within:ring-[#84C1FF]/50 transition-shadow overflow-hidden border border-gray-100">
+                                        
+                                        <div class="flex bg-gray-100 p-1 border-b border-gray-200">
+                                            <button @click="newExpense.currency = 'HKD'; calculateAmount()" :class="newExpense.currency === 'HKD' ? 'bg-[#84C1FF] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-200'" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition-all duration-200">
+                                                🇭🇰 港幣 (HKD)
+                                            </button>
+                                            <button @click="newExpense.currency = 'TWD'; calculateAmount()" :class="newExpense.currency === 'TWD' ? 'bg-[#84C1FF] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-200'" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition-all duration-200">
+                                                🇹🇼 台幣 (TWD)
+                                            </button>
+                                        </div>
+
+                                        <div class="flex items-center">
+                                            <div class="px-4 py-3 text-[#334155] font-black font-num flex items-center bg-white/50">
+                                                {{ newExpense.currency === 'HKD' ? 'HK$' : 'NT$' }}
+                                            </div>
+                                            <input type="text" inputmode="decimal" v-model="newExpense.amountInput" @keyup.enter="calculateAmount" placeholder="如 500+200*3" class="w-full bg-transparent px-4 py-3 border-none focus:ring-0 font-bold text-gray-800 font-num text-lg placeholder-gray-400">
+                                            <button @click="calculateAmount" class="px-4 text-white font-black text-xl bg-[#334155] hover:bg-opacity-90 transition-colors border-l border-[#334155]">=</button>
+                                        </div>
                                     </div>
                                     <p v-if="formError" class="text-red-500 text-xs font-bold mt-1.5">{{ formError }}</p>
                                 </div>
-                                
-                                <!-- 確認新增按鈕 -->
+                               
                                 <button @click="submitExpense" class="w-full bg-wallet-cardBg text-white font-black py-4 rounded-xl text-lg shadow-md hover:bg-opacity-90 transition-all mt-4">
                                     確認新增
                                 </button>
@@ -415,7 +432,6 @@
                         </div>
                     </transition>
                     
-                    <!-- 刪除確認 Modal -->
                     <transition name="fade">
                         <div v-if="deleteConfirmId" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
                             <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
@@ -432,7 +448,6 @@
 
                 </div>
 
-                <!-- Tab 5: 準備清單 -->
                 <div v-else-if="activeTab === 'checklist'" key="checklist" class="w-full">
                     <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-50">
                         <div class="mb-6 sticky top-[60px] bg-white py-3 z-10 border-b border-gray-100">
@@ -458,7 +473,6 @@
                                                 </div>
                                             </label>
                                             
-                                            <!-- 檢視模式 -->
                                             <span @dblclick="item.text = prompt('修改項目名稱', item.text) || item.text" :class="['text-sm select-none transition-colors duration-200 leading-snug flex-1 py-1 font-bold', item.done ? 'text-gray-400 line-through' : 'text-gray-700']">
                                                 {{ item.text }}
                                             </span>
@@ -486,8 +500,8 @@
         const { createApp, ref, computed, watch, onMounted } = Vue
 
         // 更新儲存金鑰版本號，強制讓瀏覽器載入新的預設清單
-        const STORAGE_KEY = 'hk_travel_checklist_v16'; 
-        const WALLET_STORAGE_KEY = 'hk_travel_wallet_v3'; 
+        const STORAGE_KEY = 'hk_travel_checklist_v16';
+        const WALLET_STORAGE_KEY = 'hk_travel_wallet_v4'; // 更新版本號以避免舊資料衝突
         const TAB_STORAGE_KEY = 'hk_travel_active_tab_v2';
 
         createApp({
@@ -504,7 +518,7 @@
                 };
 
                 // ===== Wallet 記帳功能區塊 =====
-                const exchangeRate = ref(4.1); 
+                const exchangeRate = ref(4.1); // 預設值，稍後會由 API 更新
                 const showRateSetting = ref(false);
                 const expenses = ref([]);
                 const isAddModalOpen = ref(false);
@@ -519,7 +533,21 @@
                     { id: 'other', name: '其他', icon: '📝', color: 'bg-[#64b5f6]' }  // 藍
                 ];
 
-                const newExpense = ref({ name: '', amountInput: '', category: 'food' });
+                // 取得今日日期字串 (預設帶入 YYYY-MM-DD)
+                const getTodayString = () => {
+                    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+                    return (new Date(Date.now() - tzOffset)).toISOString().split('T')[0];
+                };
+
+                // 更新 newExpense 物件，加入 currency, date, paymentMethod
+                const newExpense = ref({ 
+                    name: '', 
+                    amountInput: '', 
+                    category: 'food',
+                    currency: 'HKD', // 預設港幣
+                    date: getTodayString(), // 預設今天
+                    paymentMethod: 'cash' // 預設現金 (cash/credit)
+                });
 
                 // 算式計算功能
                 const evaluateMath = (expr) => {
@@ -531,28 +559,63 @@
                     } catch (e) { return 0; }
                 };
 
-                const calculatedHKD = computed(() => evaluateMath(newExpense.value.amountInput));
-                const calculatedTWD = computed(() => Math.round(calculatedHKD.value * exchangeRate.value));
+                // 依據選擇的幣別，動態計算港幣與台幣
+                const calculatedInput = computed(() => evaluateMath(newExpense.value.amountInput));
+
+                const calculatedHKD = computed(() => {
+                    if (newExpense.value.currency === 'HKD') return calculatedInput.value;
+                    return calculatedInput.value / exchangeRate.value; // 若輸入台幣，除以匯率轉港幣
+                });
+
+                const calculatedTWD = computed(() => {
+                    if (newExpense.value.currency === 'TWD') return calculatedInput.value;
+                    return Math.round(calculatedInput.value * exchangeRate.value); // 若輸入港幣，乘以匯率轉台幣
+                });
 
                 const calculateAmount = () => {
                     if (newExpense.value.amountInput) {
-                        newExpense.value.amountInput = calculatedHKD.value.toString();
+                        newExpense.value.amountInput = calculatedInput.value.toString();
+                    }
+                };
+
+                // 即時匯率 API
+                const fetchExchangeRate = async () => {
+                    try {
+                        // 使用免費的 exchangerate-api 取得即時匯率
+                        const res = await fetch('https://api.exchangerate-api.com/v4/latest/HKD');
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.rates && data.rates.TWD) {
+                                exchangeRate.value = Number(data.rates.TWD.toFixed(2));
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('無法取得即時匯率，使用預設值', error);
                     }
                 };
 
                 const openAddModal = () => {
-                    newExpense.value = { name: '', amountInput: '', category: 'food' };
+                    newExpense.value = { 
+                        name: '', 
+                        amountInput: '', 
+                        category: 'food',
+                        currency: 'HKD',
+                        date: getTodayString(),
+                        paymentMethod: 'cash'
+                    };
                     formError.value = '';
                     isAddModalOpen.value = true;
                 };
+                
                 const closeAddModal = () => { isAddModalOpen.value = false; };
 
                 const submitExpense = () => {
                     formError.value = '';
                     calculateAmount(); 
                     const finalHKD = calculatedHKD.value;
+                    const finalTWD = calculatedTWD.value;
                     
-                    if (finalHKD <= 0) {
+                    if (finalHKD <= 0 || finalTWD <= 0) {
                         formError.value = '請輸入有效的金額！';
                         return;
                     }
@@ -560,19 +623,20 @@
                         formError.value = '請輸入項目名稱！';
                         return;
                     }
-                    
-                    const now = new Date();
-                    const dateStr = `${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+                    if (!newExpense.value.date) {
+                        formError.value = '請選擇日期！';
+                        return;
+                    }
                     
                     expenses.value.unshift({
                         id: Date.now().toString(),
                         name: newExpense.value.name.trim(),
                         amountHKD: finalHKD.toFixed(1),
-                        amountTWD: calculatedTWD.value,
-                        date: dateStr,
-                        category: newExpense.value.category
+                        amountTWD: finalTWD,
+                        date: newExpense.value.date,
+                        category: newExpense.value.category,
+                        paymentMethod: newExpense.value.paymentMethod
                     });
-                    
                     closeAddModal();
                     showToast('新增成功');
                 };
@@ -589,7 +653,7 @@
                 const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '其他';
                 const getCategoryIcon = (id) => categories.find(c => c.id === id)?.icon || '📝';
                 const getCategoryColor = (id) => categories.find(c => c.id === id)?.color || 'bg-gray-400';
-
+                
                 const totalExpenseHKD = computed(() => {
                     const total = expenses.value.reduce((sum, exp) => sum + Number(exp.amountHKD), 0);
                     return total.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 1});
@@ -597,6 +661,7 @@
                 const totalExpenseTWD = computed(() => {
                     return expenses.value.reduce((sum, exp) => sum + Number(exp.amountTWD), 0);
                 });
+
                 // ==============================
 
                 // 天氣狀態
@@ -605,9 +670,9 @@
                 const weatherError = ref(false);
 
                 const getWeatherIcon = (code) => {
-                    if (code === 0) return '☀️'; 
-                    if (code >= 1 && code <= 3) return '⛅'; 
-                    if (code >= 51 && code <= 67 || code >= 80 && code <= 82) return '🌧️'; 
+                    if (code === 0) return '☀️';
+                    if (code >= 1 && code <= 3) return '⛅';
+                    if (code >= 51 && code <= 67 || code >= 80 && code <= 82) return '🌧️';
                     if (code >= 95 && code <= 99) return '⛈️'; 
                     return '☁️';
                 };
@@ -714,12 +779,13 @@
 
                 const deleteItem = (cIndex, iIndex) => { checklist.value[cIndex].items.splice(iIndex, 1); };
                 const addItem = (cIndex) => { 
-                    const text = newItemTexts.value[cIndex]?.trim(); 
+                    const text = newItemTexts.value[cIndex]?.trim();
                     if (text) { checklist.value[cIndex].items.push({ text, done: false }); newItemTexts.value[cIndex] = ''; } 
                 };
 
                 onMounted(() => {
                     fetchWeather();
+                    fetchExchangeRate(); // 呼叫即時匯率
                     
                     const savedTab = localStorage.getItem(TAB_STORAGE_KEY);
                     if(savedTab) activeTab.value = savedTab;
@@ -774,7 +840,7 @@
                     activeTab, toastMsg, toastIcon, itinerary, checklist, completedItems, totalItems, progress,
                     weatherData, weatherLoading, weatherError, newItemTexts, deleteItem, addItem,
                     exchangeRate, showRateSetting, expenses, newExpense, categories, isAddModalOpen, formError, deleteConfirmId,
-                    calculatedHKD, calculatedTWD, calculateAmount, openAddModal, closeAddModal, submitExpense, confirmDelete, executeDelete,
+                    calculatedHKD, calculatedTWD, calculatedInput, calculateAmount, openAddModal, closeAddModal, submitExpense, confirmDelete, executeDelete,
                     getCategoryName, getCategoryIcon, getCategoryColor, totalExpenseHKD, totalExpenseTWD
                 }
             }
