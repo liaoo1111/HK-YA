@@ -1,0 +1,786 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>香港4D3N Travel Guide & Wallet</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        morandi: {
+                            dark: '#334155',
+                            light: '#84C1FF',
+                            accent: '#FCD34D',
+                            bg: '#f8fafc',
+                            card: '#ffffff'
+                        },
+                        wallet: {
+                            cardBg: '#295b7a',
+                            fab: '#6ec290',
+                            catFood: '#e36a65',
+                            catShop: '#b47bea',
+                            catTrans: '#f09a59',
+                            catOther: '#64b5f6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        num: ['"Nunito"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 500;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-num {
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        /* 隱藏原生滾動條，保持橫向滾動順暢 */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 漸變進入動畫，用於 Tab 切換 */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        .fade-leave-active {
+            position: absolute;
+            width: 100%;
+        }
+
+        /* 底部彈出視窗動畫 */
+        .slide-up-enter-active,
+        .slide-up-leave-active {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+        .slide-up-enter-from,
+        .slide-up-leave-to {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        /* 自訂核取方塊樣式 */
+        .checkbox-custom:checked + div {
+            background-color: #334155;
+            border-color: #334155;
+        }
+        .checkbox-custom:checked + div svg {
+            display: block;
+        }
+        
+        /* 其他共用標籤樣式 */
+        .hyperlink {
+            color: #334155;
+            text-decoration: underline;
+            text-decoration-color: rgba(51, 65, 85, 0.3);
+            transition: all 0.2s ease-in-out;
+            font-weight: 700;
+        }
+        .hyperlink:hover {
+            color: #84C1FF;
+            text-decoration-color: #84C1FF;
+        }
+        .time-badge {
+            background-color: #f1f5f9;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            display: inline-block;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="bg-[#f2f4f7] text-gray-800 antialiased selection:bg-morandi-light selection:text-white">
+
+    <div id="app" class="max-w-[800px] mx-auto relative min-h-screen pb-24">
+        
+        <header class="pt-6 pb-2 text-center relative z-10 px-4">
+            <h1 class="text-3xl font-black text-morandi-dark mb-3 tracking-wider">HK 4D3N Guide</h1>
+            <div class="flex justify-center flex-wrap gap-2 text-sm text-gray-600 mb-4">
+                <span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full font-bold text-sm shadow-sm border border-blue-200">✈️ 7/9-7/12 出國玩要快樂 🎉</span>
+            </div>
+            
+            <!-- 頂部浮動膠囊導航選單 (Icon Style) -->
+            <div class="sticky top-2 z-50 flex justify-center w-full mt-2 transition-all duration-300">
+                <nav class="bg-white/90 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-gray-100/50 flex items-center space-x-1 overflow-x-auto max-w-full hide-scrollbar ring-1 ring-black/5">
+                    
+                    <button @click="activeTab = 'schedule'" :class="['flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'schedule' ? 'bg-morandi-dark text-white shadow-md' : 'text-gray-500 hover:bg-gray-100']">
+                        <span class="text-lg mr-1.5">📅</span> 行程
+                    </button>
+                    
+                    <button @click="activeTab = 'weather'" :class="['flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'weather' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100']">
+                        <span class="text-lg mr-1.5">⛅</span> 天氣
+                    </button>
+                    
+                    <button @click="activeTab = 'notes'" :class="['flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'notes' ? 'bg-rose-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100']">
+                        <span class="text-lg mr-1.5">💡</span> 提醒
+                    </button>
+                    
+                    <button @click="activeTab = 'wallet'" :class="['flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'wallet' ? 'bg-wallet-cardBg text-white shadow-md' : 'text-gray-500 hover:bg-gray-100']">
+                        <span class="text-lg mr-1.5">💳</span> 記帳
+                    </button>
+                    
+                    <button @click="activeTab = 'checklist'" :class="['flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'checklist' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100']">
+                        <span class="text-lg mr-1.5">✅</span> 準備
+                    </button>
+                    
+                </nav>
+            </div>
+        </header>
+
+        <!-- 全域狀態提示 -->
+        <div class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[60] pointer-events-none">
+            <transition name="fade">
+                <div v-if="toastMsg" class="bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center bg-opacity-90 backdrop-blur-sm">
+                    <span class="mr-2">{{ toastIcon }}</span>
+                    {{ toastMsg }}
+                </div>
+            </transition>
+        </div>
+
+        <div class="relative w-full px-4 md:px-8 mt-2">
+            <transition name="fade">
+                
+                <!-- Tab 1: 行程表 -->
+                <div v-if="activeTab === 'schedule'" key="schedule" class="w-full">
+                    <div class="space-y-5">
+                        <div v-for="(day, index) in itinerary" :key="index" class="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-2 h-full bg-morandi-light"></div>
+                            <h2 class="text-xl text-morandi-dark mb-1 flex items-center font-black">
+                                <span class="text-2xl mr-2">{{ day.icon }}</span>
+                                {{ day.title }}
+                            </h2>
+                            <p class="text-xs md:text-sm text-gray-500 mb-5 pb-3 border-b border-gray-100 font-bold">{{ day.subtitle }}</p>
+                            <ul class="space-y-6">
+                                <li v-for="(step, sIndex) in day.steps" :key="sIndex" class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                                    <div class="flex-shrink-0">
+                                        <span class="time-badge">{{ step.time }}</span>
+                                    </div>
+                                    <div class="flex-1 mt-1 sm:mt-0">
+                                        <!-- 使用 v-html 渲染包含連結的文字 -->
+                                        <h3 class="text-gray-700 leading-relaxed text-sm md:text-base font-medium" v-html="step.desc"></h3>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: 天氣 -->
+                <div v-else-if="activeTab === 'weather'" key="weather" class="w-full">
+                    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm">
+                        <h3 class="text-indigo-800 font-black mb-5 flex items-center text-xl border-b border-indigo-50 pb-3">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                            香港即時天氣預報
+                        </h3>
+                        
+                        <div v-if="weatherLoading" class="text-base text-indigo-400 flex items-center justify-center py-10 font-bold">
+                            <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            載入天氣資料中...
+                        </div>
+                        <div v-else-if="weatherError" class="text-center text-red-400 py-10 font-bold bg-red-50 rounded-xl">
+                            無法取得天氣資訊，請稍後再試。
+                        </div>
+                        <div v-else class="space-y-4">
+                            <div v-for="(day, index) in weatherData" :key="index" class="flex justify-between items-center text-base border-b border-gray-50 pb-4 last:border-0 last:pb-0 pt-2">
+                                <span class="text-gray-800 font-bold w-24">{{ day.date }}</span>
+                                <span class="text-gray-600 flex-1 text-center font-num flex justify-center items-center">
+                                    <span class="text-3xl mr-3 drop-shadow-sm">{{ day.icon }}</span> 
+                                    <span class="text-lg text-blue-500">{{ day.min }}°</span> <span class="text-gray-300 mx-2">-</span> <span class="text-lg font-bold text-red-500">{{ day.max }}°</span>
+                                </span>
+                                <span class="text-indigo-600 text-xs w-20 text-center bg-indigo-50 py-1.5 px-2 rounded-lg font-bold">
+                                    降雨 {{ day.rain }}%
+                                </span>
+                            </div>
+                            <div class="text-[10px] text-gray-400 text-right mt-4 pt-2">Powered by Open-Meteo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: 注意事項 -->
+                <div v-else-if="activeTab === 'notes'" key="notes" class="w-full">
+                    <div class="space-y-5">
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-rose-400">
+                            <h3 class="text-rose-800 font-black mb-4 flex items-center text-lg">
+                                <span class="mr-2 text-xl">💡</span> 香港旅遊一般注意事項
+                            </h3>
+                            <ul class="text-sm md:text-base text-gray-600 leading-relaxed list-disc pl-5 space-y-3 font-medium">
+                                <li><strong>室內冷氣極強：</strong> 商場、港鐵、餐廳冷氣像免錢，務必隨身攜帶<span class="font-bold text-rose-500">薄外套</span>以免感冒。</li>
+                                <li><strong>過馬路先看右：</strong> 香港為右駕，車速極快。過馬路請務必「先看右，再看左」，並遵守紅綠燈的嗶嗶聲。</li>
+                                <li><strong>茶餐廳文化：</strong> 點餐節奏快、需併桌是常態。部分餐廳入座會提供「洗餐具的熱水」(不是喝的)，並有加收茶水費或10%服務費習慣。</li>
+                                <li><strong>走路步數極多：</strong> 每天可能走 1.5 萬步以上，強烈建議穿最舒適的<span class="font-bold text-rose-500">好走運動鞋</span>。</li>
+                                <li><strong>插座與電壓：</strong> 香港使用「英式三叉方形」插頭 (220V)，務必攜帶轉接頭。</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-blue-400">
+                            <h3 class="text-blue-800 font-black mb-3 flex items-center text-lg">
+                                <span class="mr-2 text-xl">🚕</span> Day1 深夜返回上環指南
+                            </h3>
+                            <p class="text-sm text-gray-600 leading-relaxed mb-3 font-medium">
+                                從 DarkSide 喝完酒要回 富薈上環酒店：
+                            </p>
+                            <ul class="text-sm text-gray-600 leading-relaxed list-disc pl-5 space-y-2 font-medium">
+                                <li><strong>搭乘港鐵 (推薦 00:30 前)：</strong> 尖東站/尖沙咀站 ➔ 荃灣線往中環 ➔ 轉港島線 ➔ 上環站。</li>
+                                <li><strong>計程車/Uber (深夜方案)：</strong> 00:30 後建議用 Uber，或攔「紅色計程車」。跨海約 HKD $150-$200，7人需分搭兩台車。</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-amber-400">
+                            <h3 class="text-amber-800 font-black mb-3 flex items-center text-lg">
+                                <span class="mr-2 text-xl">⚠️</span> Day2 太平山與搭船動線
+                            </h3>
+                            <p class="text-sm text-gray-600 leading-relaxed mb-3 font-medium">
+                                已預訂 Day2 <strong>18:30</strong> 的張保仔號，請於 <strong>17:30 - 17:45</strong> 抵達中環9號碼頭集合。
+                            </p>
+                            <div class="bg-red-50 p-3 rounded-xl border border-red-100">
+                                <p class="text-sm text-red-700 leading-relaxed font-bold">
+                                    👉 為確保下山後有充裕時間吃「鼎點」，請務必在 14:45 - 15:00 之間排隊搭纜車下山！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: 記帳花費 -->
+                <div v-else-if="activeTab === 'wallet'" key="wallet" class="w-full">
+                    
+                    <!-- 頂部總計卡片 (復刻圖片深藍色卡片) -->
+                    <div class="bg-wallet-cardBg text-white rounded-[1.5rem] p-6 shadow-[0_10px_30px_-10px_rgba(41,91,122,0.6)] mb-6 relative overflow-hidden">
+                        <!-- 裝飾光影 -->
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <div class="text-xs font-bold tracking-widest text-blue-100/80 mb-2 font-num">TOTAL EXPENSES (NT$)</div>
+                                    <div class="text-4xl md:text-5xl font-black tracking-tight font-num flex items-baseline">
+                                        <span class="text-2xl mr-1">NT$</span>
+                                        {{ totalExpenseTWD.toLocaleString() }}
+                                    </div>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-md px-3 py-2 rounded-xl border border-white/10 flex flex-col items-end">
+                                    <div class="text-[10px] font-bold text-blue-100/70 mb-0.5">約 HKD</div>
+                                    <div class="text-lg font-black font-num tracking-wide">HK${{ totalExpenseHKD }}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 分隔線 -->
+                            <div class="h-px w-full bg-white/20 mb-4"></div>
+                            
+                            <!-- 匯率設定區 -->
+                            <div class="flex justify-between items-center text-sm font-medium text-blue-100/80">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                    當前匯率：{{ exchangeRate }}
+                                </div>
+                                <button @click="showRateSetting = !showRateSetting" class="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg transition-colors text-xs font-bold flex items-center">
+                                    <span class="mr-1">⚙️</span> 修改匯率
+                                </button>
+                            </div>
+                            
+                            <!-- 展開的匯率修改框 -->
+                            <div v-if="showRateSetting" class="mt-4 bg-black/20 p-3 rounded-xl flex items-center justify-between border border-white/10 transition-all">
+                                <span class="text-sm font-bold text-white/90">HKD 兌 TWD：</span>
+                                <input type="number" step="0.1" v-model="exchangeRate" class="w-24 bg-white/10 border border-white/30 text-white rounded px-2 py-1 text-center font-bold font-num focus:outline-none focus:border-white/60">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 記帳列表 (復刻圖片白色卡片與圖示) -->
+                    <div class="bg-white rounded-[1.5rem] shadow-sm pb-4 min-h-[300px]">
+                        <div v-if="expenses.length === 0" class="flex flex-col items-center justify-center py-16 px-4 text-center">
+                            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-3xl mb-4 text-gray-300">📝</div>
+                            <p class="text-gray-400 font-bold text-sm">目前沒有記帳紀錄<br>點擊右下角按鈕新增吧！</p>
+                        </div>
+                        
+                        <div v-else>
+                            <div v-for="(exp, index) in expenses" :key="exp.id" 
+                                 class="flex items-center justify-between p-4 mx-2 border-b border-gray-100/80 last:border-0 relative group">
+                                
+                                <div class="flex items-center flex-1 min-w-0 pr-4">
+                                    <!-- 類別圖示 -->
+                                    <div :class="[getCategoryColor(exp.category), 'w-11 h-11 rounded-full flex items-center justify-center text-white text-lg mr-4 flex-shrink-0 shadow-sm']">
+                                        {{ getCategoryIcon(exp.category) }}
+                                    </div>
+                                    <!-- 明細內容 -->
+                                    <div class="min-w-0">
+                                        <div class="font-black text-gray-800 text-base md:text-lg mb-0.5 truncate">{{ exp.name }}</div>
+                                        <div class="text-[11px] text-gray-400 font-bold flex items-center">
+                                            {{ exp.date }} • {{ getCategoryName(exp.category) }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 金額顯示 -->
+                                <div class="text-right flex-shrink-0">
+                                    <div class="font-black text-gray-800 text-lg font-num">HK${{ exp.amountHKD }}</div>
+                                    <div class="text-[11px] text-gray-400 font-bold font-num mt-0.5">≈ NT${{ exp.amountTWD.toLocaleString() }}</div>
+                                </div>
+
+                                <!-- 刪除按鈕 (Hover 顯示或點擊展開，此處用簡單的絕對定位顯示於右側) -->
+                                <button @click="confirmDelete(exp.id)" class="absolute right-4 bg-red-100 text-red-500 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity md:hover:bg-red-500 md:hover:text-white" title="刪除">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 懸浮新增按鈕 (FAB) -->
+                    <button @click="openAddModal" class="fixed bottom-6 right-6 w-[56px] h-[56px] bg-wallet-fab rounded-full shadow-[0_4px_15px_rgba(110,194,144,0.5)] flex items-center justify-center text-white text-2xl z-40 transition-transform active:scale-90 hover:scale-105">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
+                    </button>
+
+                    <!-- 新增記帳 面板 (由下方滑出) -->
+                    <transition name="fade">
+                        <!-- 遮罩 -->
+                        <div v-if="isAddModalOpen" @click="closeAddModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"></div>
+                    </transition>
+                    
+                    <transition name="slide-up">
+                        <div v-if="isAddModalOpen" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 p-6 pb-10 shadow-2xl max-w-[800px] mx-auto border-t border-gray-100">
+                            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                            
+                            <h3 class="text-xl font-black text-gray-800 mb-6">新增記帳</h3>
+                            
+                            <div class="space-y-5">
+                                <!-- 分類選擇 -->
+                                <div class="flex space-x-3 overflow-x-auto pb-2 hide-scrollbar">
+                                    <button v-for="cat in categories" :key="cat.id" 
+                                            @click="newExpense.category = cat.id"
+                                            :class="['flex flex-col items-center p-3 rounded-2xl min-w-[70px] transition-all border-2', newExpense.category === cat.id ? 'border-' + cat.color.replace('bg-', '') + ' bg-gray-50' : 'border-transparent opacity-60 hover:bg-gray-50 hover:opacity-100']">
+                                        <div :class="[cat.color, 'w-10 h-10 rounded-full flex items-center justify-center text-white text-lg mb-2 shadow-sm']">
+                                            {{ cat.icon }}
+                                        </div>
+                                        <span class="text-xs font-bold text-gray-600">{{ cat.name }}</span>
+                                    </button>
+                                </div>
+
+                                <!-- 品項名稱 -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5">品項名稱</label>
+                                    <input type="text" v-model="newExpense.name" placeholder="例如：Js拉麵、地鐵" class="w-full bg-gray-50 px-4 py-3 rounded-xl border-none focus:ring-2 focus:ring-wallet-fab/50 font-bold text-gray-800 placeholder-gray-400 transition-shadow">
+                                </div>
+
+                                <!-- 金額與計算機 -->
+                                <div class="relative">
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5 flex justify-between">
+                                        <span>港幣金額 (支援加減乘除)</span>
+                                        <span v-if="calculatedTWD > 0" class="text-wallet-fab">≈ NT$ {{ calculatedTWD.toLocaleString() }}</span>
+                                    </label>
+                                    <div class="flex bg-gray-50 rounded-xl focus-within:ring-2 focus-within:ring-wallet-fab/50 transition-shadow overflow-hidden">
+                                        <div class="px-4 py-3 text-gray-400 font-bold font-num bg-gray-100 flex items-center border-r border-gray-200">HK$</div>
+                                        <input type="text" inputmode="decimal" v-model="newExpense.amountInput" @keyup.enter="calculateAmount" placeholder="如 500+200*3" class="w-full bg-transparent px-4 py-3 border-none focus:ring-0 font-bold text-gray-800 font-num text-lg placeholder-gray-400">
+                                        <button @click="calculateAmount" class="px-4 text-gray-500 font-black text-xl hover:bg-gray-200 transition-colors bg-gray-100 border-l border-gray-200">=</button>
+                                    </div>
+                                    <p v-if="formError" class="text-red-500 text-xs font-bold mt-1.5">{{ formError }}</p>
+                                </div>
+                                
+                                <!-- 確認新增按鈕 -->
+                                <button @click="submitExpense" class="w-full bg-wallet-cardBg text-white font-black py-4 rounded-xl text-lg shadow-md hover:bg-opacity-90 transition-all mt-4">
+                                    確認新增
+                                </button>
+                            </div>
+                        </div>
+                    </transition>
+                    
+                    <!-- 刪除確認 Modal -->
+                    <transition name="fade">
+                        <div v-if="deleteConfirmId" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+                            <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
+                                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 text-3xl mx-auto mb-4">🗑️</div>
+                                <h3 class="text-lg font-black text-gray-800 mb-2">確定刪除此筆紀錄？</h3>
+                                <p class="text-sm text-gray-500 font-medium mb-6">刪除後無法恢復，總金額將自動重新計算。</p>
+                                <div class="flex space-x-3">
+                                    <button @click="deleteConfirmId = null" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors">取消</button>
+                                    <button @click="executeDelete" class="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors shadow-md">確定刪除</button>
+                                </div>
+                            </div>
+                        </div>
+                    </transition>
+
+                </div>
+
+                <!-- Tab 5: 準備清單 -->
+                <div v-else-if="activeTab === 'checklist'" key="checklist" class="w-full">
+                    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-50">
+                        <div class="mb-6 sticky top-[60px] bg-white py-3 z-10 border-b border-gray-100">
+                            <div class="flex justify-between text-sm mb-2 text-morandi-dark font-black">
+                                <span>打包進度</span>
+                                <span class="font-num">{{ progress }}% ({{ completedItems }}/{{ totalItems }})</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 shadow-inner overflow-hidden">
+                                <div class="bg-slate-700 h-2 rounded-full transition-all duration-700 ease-out" :style="{ width: progress + '%' }"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div v-for="(category, cIndex) in checklist" :key="cIndex" class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                <h3 class="text-base text-gray-800 mb-3 font-black">{{ category.name }}</h3>
+                                <div class="space-y-2">
+                                    <div v-for="(item, iIndex) in category.items" :key="iIndex" class="flex items-center justify-between group bg-white p-2 rounded-xl border border-gray-100 hover:border-gray-300 transition-colors">
+                                        <div class="flex items-start flex-1 min-w-0">
+                                            <label class="relative flex items-center cursor-pointer p-1">
+                                                <input type="checkbox" v-model="item.done" class="checkbox-custom opacity-0 absolute h-0 w-0">
+                                                <div class="bg-white border-2 border-gray-300 w-6 h-6 flex flex-shrink-0 justify-center items-center mr-3 rounded transition-colors group-hover:border-slate-400">
+                                                    <svg class="hidden w-4 h-4 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                                </div>
+                                            </label>
+                                            
+                                            <!-- 檢視模式 -->
+                                            <span @dblclick="item.text = prompt('修改項目名稱', item.text) || item.text" :class="['text-sm select-none transition-colors duration-200 leading-snug flex-1 py-1 font-bold', item.done ? 'text-gray-400 line-through' : 'text-gray-700']">
+                                                {{ item.text }}
+                                            </span>
+                                        </div>
+                                        <button @click="deleteItem(cIndex, iIndex)" class="text-gray-300 hover:text-red-500 p-2 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="mt-2 flex items-center pl-10">
+                                        <input type="text" v-model="newItemTexts[cIndex]" @keyup.enter="addItem(cIndex)" placeholder="＋ 新增項目..." class="flex-1 text-sm bg-transparent border-b-2 border-dashed border-gray-200 px-1 py-1 focus:outline-none focus:border-slate-500 font-bold text-gray-700 placeholder-gray-400">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </transition>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue
+
+        // 更新儲存金鑰版本號，強制讓瀏覽器載入新的預設清單
+        const STORAGE_KEY = 'hk_travel_checklist_v16'; 
+        const WALLET_STORAGE_KEY = 'hk_travel_wallet_v3'; 
+        const TAB_STORAGE_KEY = 'hk_travel_active_tab_v2';
+
+        createApp({
+            setup() {
+                // UI 狀態
+                const activeTab = ref('schedule');
+                const toastMsg = ref('');
+                const toastIcon = ref('');
+                
+                const showToast = (msg, icon = '✅') => {
+                    toastMsg.value = msg;
+                    toastIcon.value = icon;
+                    setTimeout(() => toastMsg.value = '', 2000);
+                };
+
+                // ===== Wallet 記帳功能區塊 =====
+                const exchangeRate = ref(4.1); 
+                const showRateSetting = ref(false);
+                const expenses = ref([]);
+                const isAddModalOpen = ref(false);
+                const formError = ref('');
+                const deleteConfirmId = ref(null);
+                
+                // 記帳分類定義 (對應圖片顏色)
+                const categories = [
+                    { id: 'food', name: '餐飲', icon: '🍴', color: 'bg-[#e36a65]' }, // 紅
+                    { id: 'shop', name: '購物', icon: '🛍️', color: 'bg-[#b47bea]' }, // 紫
+                    { id: 'trans', name: '交通', icon: '🚆', color: 'bg-[#f09a59]' }, // 橘
+                    { id: 'other', name: '其他', icon: '📝', color: 'bg-[#64b5f6]' }  // 藍
+                ];
+
+                const newExpense = ref({ name: '', amountInput: '', category: 'food' });
+
+                // 算式計算功能
+                const evaluateMath = (expr) => {
+                    try {
+                        const sanitized = expr.replace(/[^-()\d/*+.]/g, '');
+                        if (!sanitized) return 0;
+                        const result = new Function('return ' + sanitized)();
+                        return isNaN(result) || !isFinite(result) ? 0 : Math.round(result * 100) / 100;
+                    } catch (e) { return 0; }
+                };
+
+                const calculatedHKD = computed(() => evaluateMath(newExpense.value.amountInput));
+                const calculatedTWD = computed(() => Math.round(calculatedHKD.value * exchangeRate.value));
+
+                const calculateAmount = () => {
+                    if (newExpense.value.amountInput) {
+                        newExpense.value.amountInput = calculatedHKD.value.toString();
+                    }
+                };
+
+                const openAddModal = () => {
+                    newExpense.value = { name: '', amountInput: '', category: 'food' };
+                    formError.value = '';
+                    isAddModalOpen.value = true;
+                };
+                const closeAddModal = () => { isAddModalOpen.value = false; };
+
+                const submitExpense = () => {
+                    formError.value = '';
+                    calculateAmount(); 
+                    const finalHKD = calculatedHKD.value;
+                    
+                    if (finalHKD <= 0) {
+                        formError.value = '請輸入有效的金額！';
+                        return;
+                    }
+                    if (!newExpense.value.name.trim()) {
+                        formError.value = '請輸入項目名稱！';
+                        return;
+                    }
+                    
+                    const now = new Date();
+                    const dateStr = `${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+                    
+                    expenses.value.unshift({
+                        id: Date.now().toString(),
+                        name: newExpense.value.name.trim(),
+                        amountHKD: finalHKD.toFixed(1),
+                        amountTWD: calculatedTWD.value,
+                        date: dateStr,
+                        category: newExpense.value.category
+                    });
+                    
+                    closeAddModal();
+                    showToast('新增成功');
+                };
+
+                const confirmDelete = (id) => { deleteConfirmId.value = id; };
+                const executeDelete = () => {
+                    if(deleteConfirmId.value) {
+                        expenses.value = expenses.value.filter(exp => exp.id !== deleteConfirmId.value);
+                        deleteConfirmId.value = null;
+                        showToast('已刪除', '🗑️');
+                    }
+                };
+
+                const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '其他';
+                const getCategoryIcon = (id) => categories.find(c => c.id === id)?.icon || '📝';
+                const getCategoryColor = (id) => categories.find(c => c.id === id)?.color || 'bg-gray-400';
+
+                const totalExpenseHKD = computed(() => {
+                    const total = expenses.value.reduce((sum, exp) => sum + Number(exp.amountHKD), 0);
+                    return total.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 1});
+                });
+                const totalExpenseTWD = computed(() => {
+                    return expenses.value.reduce((sum, exp) => sum + Number(exp.amountTWD), 0);
+                });
+                // ==============================
+
+                // 天氣狀態
+                const weatherData = ref([]);
+                const weatherLoading = ref(true);
+                const weatherError = ref(false);
+
+                const getWeatherIcon = (code) => {
+                    if (code === 0) return '☀️'; 
+                    if (code >= 1 && code <= 3) return '⛅'; 
+                    if (code >= 51 && code <= 67 || code >= 80 && code <= 82) return '🌧️'; 
+                    if (code >= 95 && code <= 99) return '⛈️'; 
+                    return '☁️';
+                };
+
+                const fetchWeather = async () => {
+                    try {
+                        weatherLoading.value = true;
+                        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FHong_Kong&forecast_days=4');
+                        if (!res.ok) throw new Error('Network error');
+                        const data = await res.json();
+                        const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
+                        
+                        weatherData.value = data.daily.time.map((time, index) => {
+                            const dateObj = new Date(time);
+                            return {
+                                date: `${dateObj.getMonth() + 1}/${dateObj.getDate()} (${daysOfWeek[dateObj.getDay()]})`,
+                                max: Math.round(data.daily.temperature_2m_max[index]),
+                                min: Math.round(data.daily.temperature_2m_min[index]),
+                                rain: data.daily.precipitation_probability_max[index],
+                                icon: getWeatherIcon(data.daily.weathercode[index])
+                            }
+                        });
+                    } catch(e) { weatherError.value = true; } 
+                    finally { weatherLoading.value = false; }
+                };
+
+                // 行程資料 (簡化顯示) - 這裡更新了 Day 1 並加上了 Google Map 連結
+                const itinerary = ref([
+                    {
+                        icon: '🥃', title: 'Day 1：抵達與微醺', subtitle: '機場 ➔ 上環 ➔ 銅鑼灣 ➔ DarkSide 酒吧',
+                        steps: [
+                            { time: '早上', desc: '班機抵達 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" class="hyperlink" target="_blank" rel="noopener noreferrer">香港國際機場</a>！入境後，搭機場快綫轉港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=富薈上環酒店" class="hyperlink" target="_blank" rel="noopener noreferrer">富薈上環酒店</a> 先行寄放行李。' },
+                            { time: '午餐', desc: '搭港鐵前往<a href="https://www.google.com/maps/search/?api=1&query=灣仔" class="hyperlink" target="_blank" rel="noopener noreferrer">灣仔</a>/<a href="https://www.google.com/maps/search/?api=1&query=銅鑼灣" class="hyperlink" target="_blank" rel="noopener noreferrer">銅鑼灣</a>。推薦吃 <a href="https://www.google.com/maps/search/?api=1&query=甘牌燒鵝" class="hyperlink" target="_blank" rel="noopener noreferrer">甘牌燒鵝</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=竺扶大班燒味" class="hyperlink" target="_blank" rel="noopener noreferrer">竺扶大班燒味</a>。' },
+                            { time: '逛街', desc: '在 <a href="https://www.google.com/maps/search/?api=1&query=銅鑼灣商圈" class="hyperlink" target="_blank" rel="noopener noreferrer">銅鑼灣商圈</a> 血拼！可以逛 <a href="https://www.google.com/maps/search/?api=1&query=希慎廣場" class="hyperlink" target="_blank" rel="noopener noreferrer">希慎廣場 Hysan Place</a>、<a href="https://www.google.com/maps/search/?api=1&query=香港時代廣場" class="hyperlink" target="_blank" rel="noopener noreferrer">時代廣場</a> 與 <a href="https://www.google.com/maps/search/?api=1&query=銅鑼灣SOGO" class="hyperlink" target="_blank" rel="noopener noreferrer">SOGO</a> 周邊潮牌店。搭港鐵過海，前往 <a href="https://www.google.com/maps/search/?api=1&query=尖沙咀" class="hyperlink" target="_blank" rel="noopener noreferrer">尖沙咀</a>' },
+                            { time: '晚餐', desc: '吃 <a href="https://www.google.com/maps/search/?api=1&query=兩草+尖沙咀" class="hyperlink" target="_blank" rel="noopener noreferrer">兩草 (尖沙咀店)</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=新光大燈+尖沙咀" class="hyperlink" target="_blank" rel="noopener noreferrer">新光大燈 (尖沙咀店)</a>。' },
+                            { time: '20:30 以後', desc: '夜間步行前往 <a href="https://www.google.com/maps/search/?api=1&query=香港瑰麗酒店" class="hyperlink" target="_blank" rel="noopener noreferrer">香港瑰麗酒店</a> 內的 <a href="https://www.google.com/maps/search/?api=1&query=DarkSide+香港" class="hyperlink" target="_blank" rel="noopener noreferrer">DarkSide 酒吧</a> (亞洲50大酒吧，享受頂級調酒與奢華夜色！)' }
+                        ]
+                    },
+                    {
+                        icon: '⛴️', title: 'Day 2：山頂與遊船', subtitle: '瑞記 ➔ 太平山 ➔ 叮叮車 ➔ 張保仔號',
+                        steps: [
+                            { time: '08:00 出門', desc: '早上 8點或8點半 出門，步行前往<a href="https://www.google.com/maps/search/?api=1&query=上環市政大廈" class="hyperlink" target="_blank" rel="noopener noreferrer">上環市政大廈</a>內的 <a href="https://www.google.com/maps/search/?api=1&query=瑞記咖啡" class="hyperlink" target="_blank" rel="noopener noreferrer">瑞記咖啡</a> (品嚐道地樽仔奶茶與西多士)。' },
+                            { time: '沿途', desc: '去 <a href="https://www.google.com/maps/search/?api=1&query=Cupping+Room+Coffee+中環" class="hyperlink" target="_blank" rel="noopener noreferrer">Cupping Room Coffee</a> 買咖啡，沿著著名的 <a href="https://www.google.com/maps/search/?api=1&query=中環半山手扶梯" class="hyperlink" target="_blank" rel="noopener noreferrer">中環半山手扶梯</a> (拍照?)。<br>經過 <a href="https://www.google.com/maps/search/?api=1&query=Bakehouse+中環店" class="hyperlink" target="_blank" rel="noopener noreferrer">Bakehouse 中環店</a>! (買酸種蛋塔)' },
+                            { time: '11:00 太平山', desc: '預計 11:00-11:30 上山，前往 <a href="https://www.google.com/maps/search/?api=1&query=山頂纜車總站" class="hyperlink" target="_blank" rel="noopener noreferrer">山頂纜車總站</a> 搭纜車。大約預留 4.5 小時，纜車至 <a href="https://www.google.com/maps/search/?api=1&query=摩天台+428" class="hyperlink" target="_blank" rel="noopener noreferrer">摩天台 428</a> (盡情拍照與逛逛<a href="https://www.google.com/maps/search/?api=1&query=山頂廣場" class="hyperlink" target="_blank" rel="noopener noreferrer">山頂廣場</a>)。<br>太平山上可以吃 <a href="https://www.google.com/maps/search/?api=1&query=阿甘蝦餐廳+香港" class="hyperlink" target="_blank" rel="noopener noreferrer">阿甘蝦餐廳</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=Shake+Shack+香港山頂" class="hyperlink" target="_blank" rel="noopener noreferrer">Shake Shack</a>。<br><span class="text-red-500 font-bold">⚠️ 於 15:00 準備排隊搭纜車下山！</span>' },
+                            { time: '傍晚', desc: '下山後，搭「叮叮車」前往 <a href="https://www.google.com/maps/search/?api=1&query=鼎點+Ding+Dim+1968" class="hyperlink" target="_blank" rel="noopener noreferrer">鼎點 (Ding Dim 1968)</a> 吃飯!!' },
+                            { time: '17:30 集合', desc: '吃完鼎點前往 <a href="https://www.google.com/maps/search/?api=1&query=中環9號碼頭" class="hyperlink" target="_blank" rel="noopener noreferrer">中環9號碼頭</a> (預計 17:30 - 17:45 抵達排隊集合)。<br><span class="text-red-500 font-bold">⚠️ 提早排隊可以有比較好的位置⚠️</span><br>【18:30】登船！搭乘45分鐘。' },
+                            { time: '晚餐', desc: '下船後如果餓，可以到碼頭旁的 <a href="https://www.google.com/maps/search/?api=1&query=IFC+國際金融中心" class="hyperlink" target="_blank" rel="noopener noreferrer">IFC 國際金融中心</a> 吃東西 (有 <a href="https://www.google.com/maps/search/?api=1&query=Shake+Shack+IFC" class="hyperlink" target="_blank" rel="noopener noreferrer">Shake Shack</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=添好運+中環" class="hyperlink" target="_blank" rel="noopener noreferrer">添好運</a>)，不餓的話可以買 <a href="https://www.google.com/maps/search/?api=1&query=霸王茶姬+香港" class="hyperlink" target="_blank" rel="noopener noreferrer">霸王茶姬</a>，或先回飯店放東西。' },
+                            { time: '20:30 續攤', desc: '預計抵達到 <a href="https://www.google.com/maps/search/?api=1&query=蘭桂坊" class="hyperlink" target="_blank" rel="noopener noreferrer">蘭桂坊 (LKF)</a> 續攤！<br>👉 <a href="https://www.google.com/maps/search/?api=1&query=The+Iron+Fairies+Hong+Kong" class="hyperlink" target="_blank" rel="noopener noreferrer">The Iron Fairies Hong Kong</a> <span class="text-red-500 font-bold">⚠️提早去有機會有包廂⚠️</span><br>👉 <a href="https://www.google.com/maps/search/?api=1&query=The+Diplomat+Hong+Kong" class="hyperlink" target="_blank" rel="noopener noreferrer">The Diplomat Hong Kong</a><br>👉 <a href="https://www.google.com/maps/search/?api=1&query=蘭芳園+中環總店" class="hyperlink" target="_blank" rel="noopener noreferrer">蘭芳園 中環總店</a>' }
+                        ]
+                    },
+                    {
+                        icon: '🛍️', title: 'Day 3：九龍潮流大縱走', subtitle: '澳牛 ➔ 旺記 ➔ 旺角 ➔ 太子 ➔ 廟街',
+                        steps: [
+                            { time: '早上', desc: '9點或9點半 出門！' },
+                            { time: '早餐', desc: '搭港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=佐敦站" class="hyperlink" target="_blank" rel="noopener noreferrer">佐敦站</a> 吃 <a href="https://www.google.com/maps/search/?api=1&query=澳洲牛奶公司" class="hyperlink" target="_blank" rel="noopener noreferrer">澳洲牛奶公司</a> (經典炒蛋多士)，或隔壁的 <a href="https://www.google.com/maps/search/?api=1&query=麥文記麵食" class="hyperlink" target="_blank" rel="noopener noreferrer">麥文記麵食</a>。' },
+                            { time: '順遊', desc: '逛附近的選品店、紀念品店<br>👉 <a href="https://www.google.com/maps/search/?api=1&query=巧佳小巴用品" class="hyperlink" target="_blank" rel="noopener noreferrer">巧佳小八用品</a>' },
+                            { time: '午餐', desc: '前往品嚐超人氣的 <a href="https://www.google.com/maps/search/?api=1&query=旺記冰室+尖沙咀店" class="hyperlink" target="_blank" rel="noopener noreferrer">旺記冰室 (尖沙咀店)</a>，必吃「滑蛋雙拼飯」！' },
+                            { time: '18:00 - 20:00', desc: '前往 <a href="https://www.google.com/maps/search/?api=1&query=太子站" class="hyperlink" target="_blank" rel="noopener noreferrer">太子站</a> 吃 <a href="https://www.google.com/maps/search/?api=1&query=一點心" class="hyperlink" target="_blank" rel="noopener noreferrer">一點心</a>。必點鮮蝦腐皮捲與蘿蔔糕！' },
+                            { time: '夜市', desc: '吃飽後搭港鐵直達 <a href="https://www.google.com/maps/search/?api=1&query=油麻地站" class="hyperlink" target="_blank" rel="noopener noreferrer">油麻地站</a>，體驗 <a href="https://www.google.com/maps/search/?api=1&query=廟街夜市" class="hyperlink" target="_blank" rel="noopener noreferrer">廟街夜市</a>' },
+                            { time: '夜間', desc: '若有空餘的時間可以體驗 <a href="https://www.google.com/maps/search/?api=1&query=落日飛車" class="hyperlink" target="_blank" rel="noopener noreferrer">落日飛車</a>' }
+                        ]
+                    },
+                    {
+                        icon: '🚠', title: 'Day 4：大嶼山與滿載而歸', subtitle: '中環/香港站 ➔ 東涌 ➔ 昂坪 360 ➔ 機場',
+                        steps: [
+                            { time: '早上', desc: '9點或9點半 出門！' },
+                            { time: '【早餐】', desc: '推薦在 <a href="https://www.google.com/maps/search/?api=1&query=中環站" class="hyperlink" target="_blank" rel="noopener noreferrer">中環站</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=香港站" class="hyperlink" target="_blank" rel="noopener noreferrer">香港站</a> 附近吃港式早餐。可以吃 <a href="https://www.google.com/maps/search/?api=1&query=添好運+香港站" class="hyperlink" target="_blank" rel="noopener noreferrer">添好運 (香港站)</a> (搭東涌線超順路)，或是道地老字號的 <a href="https://www.google.com/maps/search/?api=1&query=羅富記粥麵專家+中環" class="hyperlink" target="_blank" rel="noopener noreferrer">羅富記粥麵專家</a>。' },
+                            { time: '【 → 】', desc: '退房，搭港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=東涌站" class="hyperlink" target="_blank" rel="noopener noreferrer">東涌站</a> 的 <a href="https://www.google.com/maps/search/?api=1&query=東薈城名店倉" class="hyperlink" target="_blank" rel="noopener noreferrer">東薈城名店倉</a> 寄放行李。' },
+                            { time: '【纜車】', desc: '預計 11:30 左右抵達搭乘 <a href="https://www.google.com/maps/search/?api=1&query=昂坪360" class="hyperlink" target="_blank" rel="noopener noreferrer">昂坪 360</a> 纜車參觀 <a href="https://www.google.com/maps/search/?api=1&query=天壇大佛" class="hyperlink" target="_blank" rel="noopener noreferrer">天壇大佛</a>。' },
+                            { time: '【 → 】', desc: '回到 <a href="https://www.google.com/maps/search/?api=1&query=東薈城名店倉" class="hyperlink" target="_blank" rel="noopener noreferrer">東薈城 Outlet</a> 享用下午茶與最後採買。' },
+                            { time: '【 → 】', desc: '前往 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" class="hyperlink" target="_blank" rel="noopener noreferrer">香港國際機場</a>，17:00 抵達，辦理 20:10 班機登機。<br><br><span class="text-rose-500 font-black text-xl flex items-center mt-2">🎉 HAPPY ENDING!!</span>' }
+                        ]
+                    }
+                ]);
+
+                // 更新為您提供的新準備清單項目
+                const defaultChecklist = [
+                    { name: '📄 必備證件', items: [
+                        { text: '護照', done: false }, 
+                        { text: '香港電子簽證', done: false }, 
+                        { text: '臺灣身分證健保卡(備用)', done: false },
+                        { text: '旅平險不便險', done: false }
+                    ] },
+                    { name: '🎟️ 交通與票券', items: [
+                        { text: '山頂纜車來回', done: false }, 
+                        { text: '張保仔號海盜船票', done: false },
+                        { text: '機場快線 (各自購買)', done: false }
+                    ] },
+                    { name: '🔋 💊 📱 雜項', items: [
+                        { text: '旅客八達通APP儲值HK100', done: false }, 
+                        { text: '辦eSIM ! !', done: false }, 
+                        { text: '攜帶港幣', done: false },
+                        { text: '萬國轉接頭 (220V)', done: false },
+                        { text: '小雨傘', done: false },
+                        { text: '防曬乳、墨鏡 (有34度哦哦哦)', done: false },
+                        { text: '好穿的鞋子 (聽我美甲師說可能會一直走路?)', done: false },
+                        { text: '薄外套 (室內外溫差大)', done: false },
+                        { text: '船藥 (會坐45分鐘!)、腸胃藥、防蚊液', done: false }
+                    ] }
+                ];
+
+                const checklist = ref(defaultChecklist);
+                const newItemTexts = ref({});
+
+                const deleteItem = (cIndex, iIndex) => { checklist.value[cIndex].items.splice(iIndex, 1); };
+                const addItem = (cIndex) => { 
+                    const text = newItemTexts.value[cIndex]?.trim(); 
+                    if (text) { checklist.value[cIndex].items.push({ text, done: false }); newItemTexts.value[cIndex] = ''; } 
+                };
+
+                onMounted(() => {
+                    fetchWeather();
+                    
+                    const savedTab = localStorage.getItem(TAB_STORAGE_KEY);
+                    if(savedTab) activeTab.value = savedTab;
+
+                    const savedChecklist = localStorage.getItem(STORAGE_KEY);
+                    if (savedChecklist) {
+                        try { checklist.value = JSON.parse(savedChecklist); } 
+                        catch (e) { checklist.value = defaultChecklist; }
+                    }
+                    
+                    const savedWallet = localStorage.getItem(WALLET_STORAGE_KEY);
+                    if (savedWallet) {
+                        try {
+                            const data = JSON.parse(savedWallet);
+                            if(data.rate) exchangeRate.value = data.rate;
+                            if(data.expenses) expenses.value = data.expenses;
+                        } catch (e) { console.error(e); }
+                    }
+                });
+
+                watch(activeTab, (newVal) => {
+                    localStorage.setItem(TAB_STORAGE_KEY, newVal);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+
+                watch(checklist, (newChecklist) => {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(newChecklist));
+                }, { deep: true });
+
+                watch([expenses, exchangeRate], () => {
+                    localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify({
+                        rate: exchangeRate.value,
+                        expenses: expenses.value
+                    }));
+                }, { deep: true });
+
+                const completedItems = computed(() => {
+                    let completed = 0;
+                    checklist.value.forEach(category => category.items.forEach(item => { if (item.done) completed++; }));
+                    return completed;
+                });
+
+                const totalItems = computed(() => {
+                    let total = 0;
+                    checklist.value.forEach(category => category.items.forEach(() => total++ ));
+                    return total;
+                });
+
+                const progress = computed(() => totalItems.value === 0 ? 0 : Math.round((completedItems.value / totalItems.value) * 100));
+
+                return {
+                    activeTab, toastMsg, toastIcon, itinerary, checklist, completedItems, totalItems, progress,
+                    weatherData, weatherLoading, weatherError, newItemTexts, deleteItem, addItem,
+                    exchangeRate, showRateSetting, expenses, newExpense, categories, isAddModalOpen, formError, deleteConfirmId,
+                    calculatedHKD, calculatedTWD, calculateAmount, openAddModal, closeAddModal, submitExpense, confirmDelete, executeDelete,
+                    getCategoryName, getCategoryIcon, getCategoryColor, totalExpenseHKD, totalExpenseTWD
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
+
+```
