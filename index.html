@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>香港4D3N Travel Guide</title>
+    <title>香港4D3N Travel Guide & Wallet</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,6 +54,7 @@
             color: #84C1FF;
             text-decoration-color: #84C1FF;
         }
+        
         .highlight-tag {
             display: inline-block;
             background-color: #FEF3C7;
@@ -87,7 +88,6 @@
             white-space: nowrap;
         }
         
-        /* 自訂滾動條，讓右側選單滾動時更美觀 */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
@@ -98,178 +98,347 @@
             background-color: #cbd5e1;
             border-radius: 10px;
         }
+        
+        /* 漸變進入動畫，用於 Tab 切換 */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        /* 為了讓淡入淡出更順暢，離開的元素需要設為絕對定位避免佔用空間 */
+        .fade-leave-active {
+            position: absolute;
+            width: 100%;
+        }
+        
+        /* 隱藏原生滾動條，保持橫向滾動順暢 (針對手機版頂部選單) */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="bg-morandi-bg text-gray-800 antialiased selection:bg-morandi-light selection:text-white p-4 md:p-8">
 
-    <div id="app" class="max-w-[1400px] mx-auto">
+    <div id="app" class="max-w-[1000px] mx-auto relative min-h-[80vh]">
         
-        <header class="mb-10 text-center">
+        <header class="mb-6 text-center relative z-10">
             <h1 class="text-3xl md:text-4xl text-morandi-dark mb-4 tracking-wider font-bold">香港4D3N Travel Guide</h1>
-            <div class="flex justify-center flex-wrap gap-2 text-sm text-gray-600">
+            <div class="flex justify-center flex-wrap gap-2 text-sm text-gray-600 mb-6">
                 <span class="bg-morandi-light text-morandi-dark px-4 py-1.5 rounded-full bg-opacity-30 font-bold text-base">✈️ 7/9-7/12 出國玩要快樂 🎉</span>
                 <span v-if="syncStatus" class="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center transition-opacity duration-300">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     進度已儲存
                 </span>
             </div>
+            
+            <!-- 頂部膠囊導航選單 (Capsule Navigation) -->
+            <div class="sticky top-4 z-50 flex justify-center w-full px-2">
+                <nav class="bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-[0_4px_20px_rgb(0,0,0,0.08)] border border-gray-100 flex items-center space-x-1 overflow-x-auto max-w-full hide-scrollbar">
+                    
+                    <button @click="activeTab = 'schedule'" :class="['flex items-center px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'schedule' ? 'bg-morandi-dark text-white shadow-md' : 'text-gray-600 hover:bg-gray-100']">
+                        <span class="mr-2 text-base">📅</span> 行程表
+                    </button>
+                    
+                    <button @click="activeTab = 'weather'" :class="['flex items-center px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'weather' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700']">
+                        <span class="mr-2 text-base">⛅</span> 天氣
+                    </button>
+                    
+                    <button @click="activeTab = 'notes'" :class="['flex items-center px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'notes' ? 'bg-rose-500 text-white shadow-md' : 'text-gray-600 hover:bg-rose-50 hover:text-rose-600']">
+                        <span class="mr-2 text-base">💡</span> 注意事項
+                    </button>
+                    
+                    <button @click="activeTab = 'wallet'" :class="['flex items-center px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'wallet' ? 'bg-morandi-accent text-yellow-900 shadow-md' : 'text-gray-600 hover:bg-yellow-50 hover:text-yellow-800']">
+                        <span class="mr-2 text-base">💰</span> 記帳花費
+                    </button>
+                    
+                    <button @click="activeTab = 'checklist'" :class="['flex items-center px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap', activeTab === 'checklist' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-600 hover:bg-slate-100']">
+                        <span class="mr-2 text-base">✅</span> 準備清單
+                    </button>
+                    
+                </nav>
+            </div>
         </header>
 
-        <div class="flex flex-col lg:flex-row lg:space-x-8">
-            
-            <main class="flex-grow space-y-6 lg:w-2/3">
-                <h2 class="text-2xl text-morandi-dark mb-4 pl-2 border-l-4 border-morandi-light font-bold">Schedule 行程表</h2>
+        <div class="relative w-full pb-20">
+            <transition name="fade">
                 
-                <div v-for="(day, index) in itinerary" :key="index" class="bg-morandi-card p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute top-0 left-0 w-1.5 h-full bg-morandi-light"></div>
-                    <h2 class="text-xl text-morandi-dark mb-2 flex items-center font-bold">
-                        <span class="text-2xl mr-2">{{ day.icon }}</span>
-                        {{ day.title }}
-                    </h2>
-                    <p class="text-sm text-gray-500 mb-5 pb-3 border-b border-gray-100">{{ day.subtitle }}</p>
-                    <ul class="space-y-6">
-                        <li v-for="(step, sIndex) in day.steps" :key="sIndex" class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                            <div class="flex-shrink-0">
-                                <span class="time-badge">{{ step.time }}</span>
-                            </div>
-                            <div class="flex-1 mt-1 sm:mt-0">
-                                <h3 class="text-gray-700 leading-relaxed" v-html="step.desc"></h3>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </main>
-
-            <aside class="flex-shrink-0 space-y-6 lg:w-[420px] mt-12 lg:mt-0">
-                
-                <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-200 mb-6 shadow-sm">
-                    <h3 class="text-indigo-800 font-bold mb-3 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-                        香港即時天氣預報 ⛅
-                    </h3>
+                <!-- Tab 1: 行程表 -->
+                <div v-if="activeTab === 'schedule'" key="schedule" class="w-full">
+                    <h2 class="text-2xl text-morandi-dark mb-6 pl-2 border-l-4 border-morandi-light font-bold">Schedule 行程表</h2>
                     
-                    <div v-if="weatherLoading" class="text-sm text-indigo-600 animate-pulse flex items-center">
-                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        載入最新天氣資料中...
-                    </div>
-                    <div v-else-if="weatherError" class="text-sm text-red-500">
-                        無法取得天氣資訊，請稍後再試。
-                    </div>
-                    <div v-else class="space-y-2">
-                        <div v-for="(day, index) in weatherData" :key="index" class="flex justify-between items-center text-sm border-b border-indigo-100 pb-2 last:border-0 last:pb-0 pt-1">
-                            <span class="text-indigo-900 font-bold w-16">{{ day.date }}</span>
-                            <span class="text-indigo-800 flex-1 text-center font-medium">
-                                <span class="text-lg mr-1">{{ day.icon }}</span> 
-                                {{ day.min }}° <span class="text-indigo-400 mx-0.5">~</span> {{ day.max }}°
-                            </span>
-                            <span class="text-indigo-600 text-xs w-16 text-right bg-indigo-100 py-0.5 px-2 rounded-full">
-                                降雨 {{ day.rain }}%
-                            </span>
-                        </div>
-                        <div class="text-[10px] text-indigo-400 text-right mt-2">*資料來源: Open-Meteo</div>
-                    </div>
-                </div>
-
-                <div class="bg-rose-50 p-5 rounded-2xl border border-rose-200 mb-6 shadow-sm">
-                    <h3 class="text-rose-800 font-bold mb-3 flex items-center text-lg">
-                        <span class="mr-2">💡</span> 香港旅遊注意事項
-                    </h3>
-                    <ul class="text-sm text-rose-700 leading-relaxed list-disc pl-5 space-y-2">
-                        <li><strong>室內冷氣極強：</strong> 商場、港鐵、餐廳冷氣像免錢，務必隨身攜帶<span class="font-bold underline decoration-rose-400 decoration-2">薄外套</span>以免感冒。</li>
-                        <li><strong>過馬路先看右：</strong> 香港為右駕，車速極快。過馬路請務必「先看右，再看左」，並遵守紅綠燈的嗶嗶聲。</li>
-                        <li><strong>茶餐廳文化：</strong> 點餐節奏快、需併桌是常態。部分餐廳入座會提供「洗餐具的熱水」(不是拿來喝的)，並有加收茶水費或10%服務費的習慣。</li>
-                        <li><strong>走路步數極多：</strong> 每天可能走 1.5 萬步以上，強烈建議穿最舒適、已穿過的<span class="font-bold underline decoration-rose-400 decoration-2">好走運動鞋</span>。</li>
-                        <li><strong>插座與電壓：</strong> 香港使用「英式三叉方形」插頭 (220V)，台灣電器務必攜帶轉接頭。</li>
-                    </ul>
-                </div>
-
-                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-200 mb-6 shadow-sm">
-                    <h3 class="text-blue-800 font-bold mb-2 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Day1 深夜返回上環指南 🚕
-                    </h3>
-                    <p class="text-sm text-blue-700 leading-relaxed mb-2">
-                        從 <a href="https://www.google.com/maps/search/?api=1&query=DarkSide+香港瑰麗酒店" target="_blank" class="font-bold underline">DarkSide</a> 喝完酒要回 <a href="https://www.google.com/maps/search/?api=1&query=富薈上環酒店" target="_blank" class="font-bold underline">富薈上環酒店</a>：
-                    </p>
-                    <ul class="text-sm text-blue-700 leading-relaxed list-disc pl-5 space-y-1">
-                        <li><strong>搭乘港鐵 (推薦 00:30 前)：</strong> 步行至「尖東站」或「尖沙咀站」，搭乘荃灣線往中環方向，抵達中環後轉乘港島線至「上環站」下車即可。</li>
-                        <li><strong>搭計程車/Uber (深夜方案)：</strong> 過了 00:30 建議直接用 Uber 叫車，或攔「紅色計程車」。跨海車資約 HKD $150-$200，7人需分搭兩台車喔！</li>
-                    </ul>
-                </div>
-
-                <div class="bg-amber-50 p-5 rounded-2xl border border-amber-200 mb-6 shadow-sm">
-                    <h3 class="text-amber-800 font-bold mb-2 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Day2 太平山與搭船動線 ⚠️
-                    </h3>
-                    <p class="text-sm text-amber-700 leading-relaxed mb-2">
-                        您已預訂 Day2 <strong>18:30</strong> 的 <a href="https://www.google.com/maps/search/?api=1&query=張保仔號" target="_blank" class="font-bold underline">張保仔號</a>，請務必於 <strong>17:30 - 17:45</strong> 之間抵達 <a href="https://www.google.com/maps/search/?api=1&query=中環9號碼頭" target="_blank" class="font-bold underline">中環9號碼頭</a> 集合。
-                    </p>
-                    <p class="text-sm text-red-600 leading-relaxed font-bold border-t border-amber-200 pt-2 mt-2">
-                        👉 太平山行程預留了 4.5 小時，為確保下山後有充裕時間去吃「鼎點」，請務必在 14:45 - 15:00 之間就排隊搭纜車下山！
-                    </p>
-                </div>
-
-                <div class="bg-morandi-card p-6 rounded-2xl shadow-sm border border-gray-100 lg:sticky lg:top-8 lg:max-h-[85vh] lg:overflow-y-auto custom-scrollbar">
-                    <h2 class="text-xl text-morandi-dark mb-4 pl-2 border-l-4 border-morandi-dark font-bold">行前準備清單</h2>
-                    <div class="mb-6 sticky top-0 bg-white py-2 z-10 border-b border-gray-50">
-                        <div class="flex justify-between text-sm mb-2 text-morandi-dark font-bold">
-                            <span>準備進度</span>
-                            <span>{{ progress }}% ({{ completedItems }}/{{ totalItems }})</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2.5">
-                            <div class="bg-morandi-dark h-2.5 rounded-full transition-all duration-500" :style="{ width: progress + '%' }"></div>
-                        </div>
-                    </div>
-
                     <div class="space-y-6">
-                        <div v-for="(category, cIndex) in checklist" :key="cIndex">
-                            <h3 class="text-base text-morandi-dark mb-3 border-b border-gray-100 pb-2 font-bold">{{ category.name }}</h3>
-                            <div class="space-y-3">
-                                <!-- 清單項目清單 -->
-                                <div v-for="(item, iIndex) in category.items" :key="iIndex" class="flex items-center justify-between group">
-                                    <div class="flex items-start flex-1 min-w-0">
-                                        <label class="relative flex items-center mt-0.5 cursor-pointer">
-                                            <input type="checkbox" v-model="item.done" class="checkbox-custom opacity-0 absolute h-0 w-0">
-                                            <div class="bg-white border-2 border-gray-300 w-5 h-5 flex flex-shrink-0 justify-center items-center mr-3 rounded transition-colors group-hover:border-morandi-light">
-                                                <svg class="hidden w-3 h-3 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        <div v-for="(day, index) in itinerary" :key="index" class="bg-morandi-card p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden transition-shadow hover:shadow-md">
+                            <div class="absolute top-0 left-0 w-1.5 h-full bg-morandi-light"></div>
+                            <h2 class="text-xl text-morandi-dark mb-2 flex items-center font-bold">
+                                <span class="text-2xl mr-2">{{ day.icon }}</span>
+                                {{ day.title }}
+                            </h2>
+                            <p class="text-sm text-gray-500 mb-5 pb-3 border-b border-gray-100">{{ day.subtitle }}</p>
+                            <ul class="space-y-6">
+                                <li v-for="(step, sIndex) in day.steps" :key="sIndex" class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                                    <div class="flex-shrink-0">
+                                        <span class="time-badge">{{ step.time }}</span>
+                                    </div>
+                                    <div class="flex-1 mt-1 sm:mt-0">
+                                        <h3 class="text-gray-700 leading-relaxed" v-html="step.desc"></h3>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: 天氣 -->
+                <div v-else-if="activeTab === 'weather'" key="weather" class="w-full">
+                    <h2 class="text-2xl text-morandi-dark mb-6 pl-2 border-l-4 border-indigo-400 font-bold">Weather 天氣預報</h2>
+                    <div class="bg-indigo-50 p-6 md:p-8 rounded-2xl border border-indigo-200 shadow-sm max-w-2xl mx-auto">
+                        <h3 class="text-indigo-800 font-bold mb-5 flex items-center text-xl">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                            香港即時天氣預報
+                        </h3>
+                        
+                        <div v-if="weatherLoading" class="text-base text-indigo-600 animate-pulse flex items-center py-4">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            載入最新天氣資料中...
+                        </div>
+                        <div v-else-if="weatherError" class="text-base text-red-500 py-4 font-bold">
+                            無法取得天氣資訊，請稍後再試。
+                        </div>
+                        <div v-else class="space-y-4">
+                            <div v-for="(day, index) in weatherData" :key="index" class="flex justify-between items-center text-base border-b border-indigo-100 pb-4 last:border-0 last:pb-0 pt-2">
+                                <span class="text-indigo-900 font-bold w-24 text-lg">{{ day.date }}</span>
+                                <span class="text-indigo-800 flex-1 text-center font-medium flex justify-center items-center">
+                                    <span class="text-2xl mr-3">{{ day.icon }}</span> 
+                                    <span class="text-xl">{{ day.min }}°</span> <span class="text-indigo-400 mx-2">~</span> <span class="text-xl font-bold">{{ day.max }}°</span>
+                                </span>
+                                <span class="text-indigo-700 text-sm w-20 text-center bg-indigo-100 py-1 px-3 rounded-full font-bold">
+                                    降雨 {{ day.rain }}%
+                                </span>
+                            </div>
+                            <div class="text-xs text-indigo-400 text-right mt-4 pt-2 border-t border-indigo-100/50">*資料來源: Open-Meteo即時氣象</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: 注意事項 -->
+                <div v-else-if="activeTab === 'notes'" key="notes" class="w-full">
+                    <h2 class="text-2xl text-morandi-dark mb-6 pl-2 border-l-4 border-rose-400 font-bold">Notes 旅遊提醒</h2>
+                    
+                    <div class="space-y-6 max-w-3xl mx-auto">
+                        <div class="bg-rose-50 p-6 md:p-8 rounded-2xl border border-rose-200 shadow-sm">
+                            <h3 class="text-rose-800 font-bold mb-4 flex items-center text-xl">
+                                <span class="mr-2">💡</span> 香港旅遊一般注意事項
+                            </h3>
+                            <ul class="text-base text-rose-700 leading-relaxed list-disc pl-6 space-y-3">
+                                <li><strong>室內冷氣極強：</strong> 商場、港鐵、餐廳冷氣像免錢，務必隨身攜帶<span class="font-bold underline decoration-rose-400 decoration-2">薄外套</span>以免感冒。</li>
+                                <li><strong>過馬路先看右：</strong> 香港為右駕，車速極快。過馬路請務必「先看右，再看左」，並遵守紅綠燈的嗶嗶聲。</li>
+                                <li><strong>茶餐廳文化：</strong> 點餐節奏快、需併桌是常態。部分餐廳入座會提供「洗餐具的熱水」(不是拿來喝的)，並有加收茶水費或10%服務費的習慣。</li>
+                                <li><strong>走路步數極多：</strong> 每天可能走 1.5 萬步以上，強烈建議穿最舒適、已穿過的<span class="font-bold underline decoration-rose-400 decoration-2">好走運動鞋</span>。</li>
+                                <li><strong>插座與電壓：</strong> 香港使用「英式三叉方形」插頭 (220V)，台灣電器務必攜帶轉接頭。</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-blue-50 p-6 md:p-8 rounded-2xl border border-blue-200 shadow-sm">
+                            <h3 class="text-blue-800 font-bold mb-3 flex items-center text-lg">
+                                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Day1 深夜返回上環指南 🚕
+                            </h3>
+                            <p class="text-base text-blue-700 leading-relaxed mb-3">
+                                從 <a href="https://www.google.com/maps/search/?api=1&query=DarkSide+香港瑰麗酒店" target="_blank" class="font-bold underline">DarkSide</a> 喝完酒要回 <a href="https://www.google.com/maps/search/?api=1&query=富薈上環酒店" target="_blank" class="font-bold underline">富薈上環酒店</a>：
+                            </p>
+                            <ul class="text-base text-blue-700 leading-relaxed list-disc pl-6 space-y-2">
+                                <li><strong>搭乘港鐵 (推薦 00:30 前)：</strong> 步行至「尖東站」或「尖沙咀站」，搭乘荃灣線往中環方向，抵達中環後轉乘港島線至「上環站」下車即可。</li>
+                                <li><strong>搭計程車/Uber (深夜方案)：</strong> 過了 00:30 建議直接用 Uber 叫車，或攔「紅色計程車」。跨海車資約 HKD $150-$200，7人需分搭兩台車喔！</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-amber-50 p-6 md:p-8 rounded-2xl border border-amber-200 shadow-sm">
+                            <h3 class="text-amber-800 font-bold mb-3 flex items-center text-lg">
+                                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Day2 太平山與搭船動線 ⚠️
+                            </h3>
+                            <p class="text-base text-amber-700 leading-relaxed mb-3">
+                                您已預訂 Day2 <strong>18:30</strong> 的 <a href="https://www.google.com/maps/search/?api=1&query=張保仔號" target="_blank" class="font-bold underline">張保仔號</a>，請務必於 <strong>17:30 - 17:45</strong> 之間抵達 <a href="https://www.google.com/maps/search/?api=1&query=中環9號碼頭" target="_blank" class="font-bold underline">中環9號碼頭</a> 集合。
+                            </p>
+                            <div class="bg-red-50 border border-red-200 p-4 rounded-xl mt-4">
+                                <p class="text-base text-red-700 leading-relaxed font-bold">
+                                    👉 太平山行程預留了 4.5 小時，為確保下山後有充裕時間去吃「鼎點」，請務必在 14:45 - 15:00 之間就排隊搭纜車下山！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: 記帳花費 -->
+                <div v-else-if="activeTab === 'wallet'" key="wallet" class="w-full">
+                    <h2 class="text-2xl text-morandi-dark mb-6 pl-2 border-l-4 border-morandi-accent font-bold">Wallet 記帳與匯率</h2>
+                    
+                    <div class="bg-morandi-card p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden max-w-4xl mx-auto">
+                        <div class="absolute top-0 left-0 w-1.5 h-full bg-morandi-accent"></div>
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b border-gray-100 pb-5 gap-4">
+                            <h2 class="text-xl text-morandi-dark flex items-center font-bold">
+                                <span class="text-3xl mr-3">💰</span> 總花費統計
+                            </h2>
+                            <!-- 匯率設定 -->
+                            <div class="flex items-center space-x-3 bg-yellow-50 px-4 py-2 rounded-xl border border-yellow-200 shadow-inner">
+                                <label class="text-sm font-bold text-yellow-800">匯率 (HKD ➔ TWD)</label>
+                                <input type="number" step="0.01" v-model="exchangeRate" class="w-20 px-2 py-1 text-base border-b-2 border-yellow-400 focus:outline-none focus:border-yellow-600 bg-white rounded text-center font-bold text-yellow-900 shadow-sm">
+                            </div>
+                        </div>
+                        
+                        <!-- 總計顯示區 -->
+                        <div class="bg-slate-800 rounded-xl p-6 text-white mb-8 shadow-md flex justify-between items-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-slate-800 to-slate-700 opacity-90 z-0"></div>
+                            <div class="relative z-10">
+                                <div class="text-slate-300 text-sm font-bold mb-1">Total Expense 總支出</div>
+                                <div class="text-4xl md:text-5xl font-black text-morandi-accent tracking-wider">HK$ {{ totalExpenseHKD }}</div>
+                            </div>
+                            <div class="relative z-10 text-right">
+                                <div class="text-slate-300 text-sm font-bold mb-1">約合台幣</div>
+                                <div class="text-xl md:text-2xl font-bold text-white">NT$ {{ totalExpenseTWD.toLocaleString() }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 記帳輸入區 -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-8 bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-bold text-gray-600 mb-2">品項 / 備註</label>
+                                <input type="text" v-model="newExpense.name" placeholder="例: 晚餐、伴手禮" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-morandi-light focus:ring-2 focus:ring-morandi-light/50 bg-white transition-all shadow-sm">
+                            </div>
+                            <div class="md:col-span-5 relative">
+                                <label class="block text-sm font-bold text-gray-600 mb-2 flex justify-between items-center">
+                                    <span>港幣金額 (支援算式)</span>
+                                    <span v-if="calculatedTWD > 0" class="text-morandi-light bg-blue-50 px-2 py-0.5 rounded text-xs font-bold border border-blue-100">約 NT$ {{ calculatedTWD.toLocaleString() }}</span>
+                                </label>
+                                <div class="flex shadow-sm rounded-lg">
+                                    <input type="text" v-model="newExpense.amountInput" @keyup.enter="calculateAndAddExpense" placeholder="如: 500+200*3" class="w-full px-4 py-2.5 border border-gray-300 rounded-l-lg focus:outline-none focus:border-morandi-light focus:z-10 bg-white font-mono text-base">
+                                    <button @click="calculateAmount" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 font-black transition-colors border-y border-r border-gray-300 focus:z-10" title="計算總和">=</button>
+                                    <div class="bg-morandi-light bg-opacity-20 text-morandi-dark px-3 py-2.5 rounded-r-lg border-y border-r border-gray-300 flex items-center font-bold min-w-[90px] justify-center text-sm">
+                                        HK$ {{ calculatedHKD }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-bold text-gray-600 mb-2">照片縮圖 (選填)</label>
+                                <input type="file" ref="fileInputRef" accept="image/*" @change="handlePhotoUpload" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-morandi-dark file:text-white hover:file:bg-slate-700 transition-colors cursor-pointer bg-white border border-gray-300 rounded-lg shadow-sm">
+                            </div>
+                            <div class="md:col-span-1 flex items-end">
+                                <button @click="calculateAndAddExpense" class="w-full h-[46px] bg-morandi-accent text-yellow-900 font-bold py-2 rounded-lg hover:bg-yellow-400 transition-colors shadow-sm flex justify-center items-center">
+                                    新增
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 記帳列表 -->
+                        <div class="mt-6">
+                            <h3 class="text-base font-bold text-gray-700 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                                歷史明細
+                            </h3>
+
+                            <div v-if="expenses.length === 0" class="text-center py-12 text-gray-400 text-base bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                目前還沒有任何記帳紀錄喔！趕快記錄第一筆吧。
+                            </div>
+
+                            <ul v-else class="space-y-4 pr-2">
+                                <li v-for="expense in expenses" :key="expense.id" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-morandi-accent hover:shadow-md transition-all group">
+                                    <div class="flex items-center space-x-5 flex-1 overflow-hidden">
+                                        <!-- 縮圖 -->
+                                        <div class="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-200 flex items-center justify-center shadow-sm">
+                                            <img v-if="expense.photo" :src="expense.photo" class="w-full h-full object-cover">
+                                            <span v-else class="text-gray-300 text-2xl">📝</span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-gray-800 text-lg mb-1 truncate">{{ expense.name }}</div>
+                                            <div class="text-sm text-gray-400 flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                {{ expense.date }}
                                             </div>
-                                        </label>
-                                        
-                                        <!-- 編輯模式 -->
-                                        <div v-if="editingItem.cIndex === cIndex && editingItem.iIndex === iIndex" class="flex-1 mr-2">
-                                            <input type="text" v-model="editingText" v-focus @blur="saveEdit(cIndex, iIndex)" @keyup.enter="saveEdit(cIndex, iIndex)" @keyup.esc="editingItem = {cIndex: -1, iIndex: -1}" class="w-full text-sm border-b-2 border-morandi-light focus:outline-none bg-blue-50 px-1 py-0.5 text-gray-700" placeholder="編輯項目...">
+                                        </div>
+                                    </div>
+                                    <div class="text-right mr-4 ml-4 flex-shrink-0">
+                                        <div class="font-black text-xl text-morandi-dark tracking-wide">HK$ {{ expense.amountHKD }}</div>
+                                        <div class="text-sm font-bold text-gray-400 mt-0.5">NT$ {{ expense.amountTWD.toLocaleString() }}</div>
+                                    </div>
+                                    <button @click="deleteExpense(expense.id)" class="text-gray-300 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 flex-shrink-0" title="刪除">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: 準備清單 -->
+                <div v-else-if="activeTab === 'checklist'" key="checklist" class="w-full">
+                    <h2 class="text-2xl text-morandi-dark mb-6 pl-2 border-l-4 border-morandi-dark font-bold">Checklist 行前準備清單</h2>
+                    
+                    <div class="bg-morandi-card p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-3xl mx-auto">
+                        <div class="mb-8 sticky top-0 bg-white py-3 z-10 border-b border-gray-100">
+                            <div class="flex justify-between text-base mb-3 text-morandi-dark font-bold">
+                                <span>準備進度</span>
+                                <span>{{ progress }}% ({{ completedItems }}/{{ totalItems }})</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 shadow-inner">
+                                <div class="bg-morandi-dark h-3 rounded-full transition-all duration-500" :style="{ width: progress + '%' }"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-8">
+                            <div v-for="(category, cIndex) in checklist" :key="cIndex" class="bg-gray-50/50 p-5 rounded-xl border border-gray-100">
+                                <h3 class="text-lg text-morandi-dark mb-4 border-b border-gray-200 pb-2 font-bold">{{ category.name }}</h3>
+                                <div class="space-y-3">
+                                    <div v-for="(item, iIndex) in category.items" :key="iIndex" class="flex items-center justify-between group bg-white p-2.5 rounded-lg border border-transparent hover:border-gray-200 hover:shadow-sm transition-all">
+                                        <div class="flex items-start flex-1 min-w-0">
+                                            <label class="relative flex items-center mt-0.5 cursor-pointer">
+                                                <input type="checkbox" v-model="item.done" class="checkbox-custom opacity-0 absolute h-0 w-0">
+                                                <div class="bg-white border-2 border-gray-300 w-6 h-6 flex flex-shrink-0 justify-center items-center mr-4 rounded-md transition-colors group-hover:border-morandi-light">
+                                                    <svg class="hidden w-4 h-4 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                                </div>
+                                            </label>
+                                            
+                                            <!-- 編輯模式 -->
+                                            <div v-if="editingItem.cIndex === cIndex && editingItem.iIndex === iIndex" class="flex-1 mr-2">
+                                                <input type="text" v-model="editingText" v-focus @blur="saveEdit(cIndex, iIndex)" @keyup.enter="saveEdit(cIndex, iIndex)" @keyup.esc="editingItem = {cIndex: -1, iIndex: -1}" class="w-full text-base border-b-2 border-morandi-light focus:outline-none bg-blue-50 px-2 py-1 text-gray-800 rounded-t" placeholder="編輯項目...">
+                                            </div>
+                                            
+                                            <!-- 檢視模式 -->
+                                            <span v-else @dblclick="startEdit(cIndex, iIndex, item.text)" :class="['text-base select-none transition-colors duration-200 leading-snug cursor-pointer flex-1 py-0.5', item.done ? 'text-gray-400 line-through' : 'text-gray-700 group-hover:text-morandi-dark font-medium']" title="雙擊可編輯">
+                                                {{ item.text }}
+                                            </span>
                                         </div>
                                         
-                                        <!-- 檢視模式 -->
-                                        <span v-else @dblclick="startEdit(cIndex, iIndex, item.text)" :class="['text-sm select-none transition-colors duration-200 leading-snug cursor-pointer flex-1 py-0.5', item.done ? 'text-gray-400 line-through' : 'text-gray-700 group-hover:text-morandi-dark']" title="雙擊可編輯">
-                                            {{ item.text }}
-                                        </span>
+                                        <div class="flex-shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 ml-3" v-show="!(editingItem.cIndex === cIndex && editingItem.iIndex === iIndex)">
+                                            <button @click="startEdit(cIndex, iIndex, item.text)" class="text-gray-400 hover:text-blue-500 p-1.5 rounded-md hover:bg-blue-50 transition-colors" title="編輯">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                            </button>
+                                            <button @click="deleteItem(cIndex, iIndex)" class="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors" title="刪除">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        </div>
                                     </div>
-                                    
-                                    <!-- 操作按鈕 (編輯/刪除) - 滑鼠懸停時顯示 -->
-                                    <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1 ml-2" v-show="!(editingItem.cIndex === cIndex && editingItem.iIndex === iIndex)">
-                                        <button @click="startEdit(cIndex, iIndex, item.text)" class="text-gray-400 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition-colors" title="編輯">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                        </button>
-                                        <button @click="deleteItem(cIndex, iIndex)" class="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors" title="刪除">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
 
-                                <!-- 新增項目輸入框 -->
-                                <div class="mt-2 flex items-center pl-8">
-                                    <input type="text" v-model="newItemTexts[cIndex]" @keyup.enter="addItem(cIndex)" placeholder="＋ 新增項目..." class="flex-1 text-sm bg-transparent border-b border-dashed border-gray-300 px-1 py-1 focus:outline-none focus:border-morandi-light focus:border-solid transition-colors text-gray-500 placeholder-gray-400">
-                                    <button @click="addItem(cIndex)" :class="['ml-2 px-2 py-1 rounded text-xs font-bold transition-colors', newItemTexts[cIndex]?.trim() ? 'text-morandi-dark bg-morandi-accent bg-opacity-70 hover:bg-opacity-100' : 'text-gray-400 bg-gray-100 cursor-not-allowed']" :disabled="!newItemTexts[cIndex]?.trim()">
-                                        新增
-                                    </button>
+                                    <div class="mt-3 flex items-center pl-10 pt-2">
+                                        <input type="text" v-model="newItemTexts[cIndex]" @keyup.enter="addItem(cIndex)" placeholder="＋ 新增準備項目..." class="flex-1 text-sm bg-transparent border-b-2 border-dashed border-gray-300 px-2 py-1.5 focus:outline-none focus:border-morandi-light focus:border-solid transition-colors text-gray-700 placeholder-gray-400 font-medium">
+                                        <button @click="addItem(cIndex)" :class="['ml-3 px-4 py-1.5 rounded-lg text-sm font-bold transition-all shadow-sm', newItemTexts[cIndex]?.trim() ? 'text-morandi-dark bg-morandi-accent hover:bg-yellow-400 transform hover:scale-105' : 'text-gray-400 bg-gray-200 cursor-not-allowed']" :disabled="!newItemTexts[cIndex]?.trim()">
+                                            新增
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </aside>
+
+            </transition>
         </div>
 
     </div>
@@ -277,41 +446,135 @@
     <script>
         const { createApp, ref, computed, watch, onMounted } = Vue
 
-        const STORAGE_KEY = 'hk_travel_checklist_v13'; // 更新版本號以載入新清單
+        const STORAGE_KEY = 'hk_travel_checklist_v14'; 
+        const WALLET_STORAGE_KEY = 'hk_travel_wallet_v2'; 
+        const TAB_STORAGE_KEY = 'hk_travel_active_tab';
 
         createApp({
-            // 註冊自訂指令：讓編輯框出現時自動對焦
             directives: {
                 focus: {
-                    mounted(el) {
-                        el.focus()
-                    }
+                    mounted(el) { el.focus() }
                 }
             },
             setup() {
+                // 控制目前的 Tab，預設為行程表
+                const activeTab = ref('schedule');
                 const syncStatus = ref(false);
                 
+                // ===== Wallet 記帳功能區塊 =====
+                const exchangeRate = ref(4.1); 
+                const expenses = ref([]);
+                const fileInputRef = ref(null);
+                
+                const newExpense = ref({
+                    name: '',
+                    amountInput: '',
+                    photo: null
+                });
+
+                const evaluateMath = (expr) => {
+                    try {
+                        const sanitized = expr.replace(/[^-()\d/*+.]/g, '');
+                        if (!sanitized) return 0;
+                        const result = new Function('return ' + sanitized)();
+                        return isNaN(result) || !isFinite(result) ? 0 : Math.round(result * 100) / 100;
+                    } catch (e) {
+                        return 0;
+                    }
+                };
+
+                const calculatedHKD = computed(() => evaluateMath(newExpense.value.amountInput));
+                const calculatedTWD = computed(() => Math.round(calculatedHKD.value * exchangeRate.value));
+
+                const calculateAmount = () => {
+                    if (newExpense.value.amountInput) {
+                        newExpense.value.amountInput = calculatedHKD.value.toString();
+                    }
+                };
+
+                const handlePhotoUpload = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 250; 
+                            const scaleSize = MAX_WIDTH / img.width;
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
+                            
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            newExpense.value.photo = canvas.toDataURL('image/jpeg', 0.6);
+                        };
+                    };
+                };
+
+                const calculateAndAddExpense = () => {
+                    calculateAmount(); 
+                    const finalHKD = calculatedHKD.value;
+                    
+                    if (finalHKD <= 0) {
+                        alert("請輸入大於0的有效金額！");
+                        return;
+                    }
+                    if (!newExpense.value.name.trim()) {
+                        alert("請輸入記帳品項！");
+                        return;
+                    }
+                    
+                    expenses.value.unshift({
+                        id: Date.now().toString(),
+                        name: newExpense.value.name,
+                        amountHKD: finalHKD,
+                        amountTWD: calculatedTWD.value,
+                        date: new Date().toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                        photo: newExpense.value.photo
+                    });
+                    
+                    newExpense.value.name = '';
+                    newExpense.value.amountInput = '';
+                    newExpense.value.photo = null;
+                    if (fileInputRef.value) fileInputRef.value.value = ''; 
+                };
+
+                const deleteExpense = (id) => {
+                    if(confirm('確定要刪除這筆記帳紀錄嗎？')) {
+                        expenses.value = expenses.value.filter(exp => exp.id !== id);
+                    }
+                };
+
+                const totalExpenseHKD = computed(() => {
+                    return expenses.value.reduce((sum, exp) => sum + Number(exp.amountHKD), 0).toFixed(1);
+                });
+                const totalExpenseTWD = computed(() => {
+                    return expenses.value.reduce((sum, exp) => sum + Number(exp.amountTWD), 0);
+                });
+                // ==============================
+
                 // 天氣狀態
                 const weatherData = ref([]);
                 const weatherLoading = ref(true);
                 const weatherError = ref(false);
 
-                // 將 WMO 天氣代碼轉換為 Emoji
                 const getWeatherIcon = (code) => {
-                    if (code === 0) return '☀️'; // 晴天
-                    if (code >= 1 && code <= 3) return '⛅'; // 多雲
-                    if (code === 45 || code === 48) return '🌫️'; // 霧
-                    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️'; // 雨天
-                    if (code >= 71 && code <= 77) return '❄️'; // 雪
-                    if (code >= 95 && code <= 99) return '⛈️'; // 雷雨
+                    if (code === 0) return '☀️'; 
+                    if (code >= 1 && code <= 3) return '⛅'; 
+                    if (code === 45 || code === 48) return '🌫️'; 
+                    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️'; 
+                    if (code >= 71 && code <= 77) return '❄️'; 
+                    if (code >= 95 && code <= 99) return '⛈️'; 
                     return '🌈';
                 };
 
-                // 抓取香港天氣預報
                 const fetchWeather = async () => {
                     try {
                         weatherLoading.value = true;
-                        // 香港座標：緯度 22.3193, 經度 114.1694
                         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FHong_Kong&forecast_days=4');
                         if (!res.ok) throw new Error('Network response was not ok');
                         const data = await res.json();
@@ -320,12 +583,8 @@
                         
                         weatherData.value = data.daily.time.map((time, index) => {
                             const dateObj = new Date(time);
-                            const month = dateObj.getMonth() + 1;
-                            const day = dateObj.getDate();
-                            const weekDay = daysOfWeek[dateObj.getDay()];
-                            
                             return {
-                                date: `${month}/${day} (${weekDay})`,
+                                date: `${dateObj.getMonth() + 1}/${dateObj.getDate()} (${daysOfWeek[dateObj.getDay()]})`,
                                 max: Math.round(data.daily.temperature_2m_max[index]),
                                 min: Math.round(data.daily.temperature_2m_min[index]),
                                 rain: data.daily.precipitation_probability_max[index],
@@ -333,18 +592,16 @@
                             }
                         });
                     } catch(e) {
-                        console.error('天氣資料抓取失敗：', e);
                         weatherError.value = true;
                     } finally {
                         weatherLoading.value = false;
                     }
                 };
 
+                // 行程資料
                 const itinerary = ref([
                     {
-                        icon: '🥃',
-                        title: 'Day 1：銅鑼灣購物與維港微醺',
-                        subtitle: '機場 ➔ 上環飯店 ➔ 灣仔/銅鑼灣逛街 ➔ 尖沙咀晚餐 ➔ DarkSide 酒吧',
+                        icon: '🥃', title: 'Day 1：銅鑼灣購物與維港微醺', subtitle: '機場 ➔ 上環飯店 ➔ 灣仔/銅鑼灣逛街 ➔ 尖沙咀晚餐 ➔ DarkSide 酒吧',
                         steps: [
                             { time: '09:55 - 11:30', desc: '班機抵達 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" target="_blank" class="hyperlink">香港國際機場</a>！辦理入境後，搭乘機場快綫轉港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=富薈上環酒店" target="_blank" class="hyperlink">富薈上環酒店</a> 先行寄放行李。' },
                             { time: '12:00 - 14:00', desc: '【午餐】搭港鐵前往灣仔/銅鑼灣。推薦吃 <a href="https://www.google.com/maps/search/?api=1&query=甘牌燒鵝+灣仔" target="_blank" class="hyperlink">甘牌燒鵝</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=竺扶大班燒味+灣仔" target="_blank" class="hyperlink">竺扶大班燒味</a>。' },
@@ -355,9 +612,7 @@
                         ]
                     },
                     {
-                        icon: '⛴️',
-                        title: 'Day 2：中環咖啡散步與太平山浪漫遊船',
-                        subtitle: '瑞記咖啡 ➔ Cupping Room ➔ 山頂纜車 ➔ 叮叮車 ➔ 鼎點 ➔ 張保仔號',
+                        icon: '⛴️', title: 'Day 2：中環咖啡散步與太平山浪漫遊船', subtitle: '瑞記咖啡 ➔ Cupping Room ➔ 山頂纜車 ➔ 叮叮車 ➔ 鼎點 ➔ 張保仔號',
                         steps: [
                             { time: '08:00 - 09:00', desc: '【早餐】08:00 - 08:30 出門最完美！步行前往位於上環市政大廈內的 <a href="https://www.google.com/maps/search/?api=1&query=上環市政大廈+瑞記咖啡" target="_blank" class="hyperlink">瑞記咖啡</a> 品嚐道地樽仔奶茶與西多士。' },
                             { time: '09:00 - 11:00', desc: '散步前往 <a href="https://www.google.com/maps/search/?api=1&query=Cupping+Room+Coffee+Roasters+中環" target="_blank" class="hyperlink">Cupping Room Coffee</a> 喝杯精品咖啡，接著沿著著名的 <a href="https://www.google.com/maps/search/?api=1&query=中環半山手扶梯" target="_blank" class="hyperlink">中環半山手扶梯</a> 漫步，途中順路經過 <a href="https://www.google.com/maps/search/?api=1&query=Bakehouse+中環店" target="_blank" class="hyperlink">Bakehouse 中環店</a>，買幾顆超人氣酸種蛋塔解解饞。' },
@@ -369,9 +624,7 @@
                         ]
                     },
                     {
-                        icon: '🛍️',
-                        title: 'Day 3：九龍市井與潮流文化大縱走',
-                        subtitle: '佐敦(澳牛) ➔ 旺記冰室 ➔ 超人氣蛋塔 ➔ 旺角(相機/公仔/波鞋街) ➔ 太子(一點心) ➔ 廟街',
+                        icon: '🛍️', title: 'Day 3：九龍市井與潮流文化大縱走', subtitle: '佐敦(澳牛) ➔ 旺記冰室 ➔ 超人氣蛋塔 ➔ 旺角(相機/公仔/波鞋街) ➔ 太子(一點心) ➔ 廟街',
                         steps: [
                             { time: '09:00 - 10:30', desc: '09:00 準時出門！搭港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=佐敦站" target="_blank" class="hyperlink">佐敦站</a>。早餐吃 <a href="https://www.google.com/maps/search/?api=1&query=澳洲牛奶公司" target="_blank" class="hyperlink">澳洲牛奶公司</a> (經典炒蛋多士)，或隔壁的 <a href="https://www.google.com/maps/search/?api=1&query=麥文記麵食" target="_blank" class="hyperlink">麥文記麵食</a>。' },
                             { time: '11:00 - 12:30', desc: '【午餐/冰室】前往品嚐超人氣的 <a href="https://www.google.com/maps/search/?api=1&query=旺記冰室+尖沙咀" target="_blank" class="hyperlink">旺記冰室</a> (推薦尖沙咀店)，必吃全港最強「滑蛋雙拼飯」！' },
@@ -382,9 +635,7 @@
                         ]
                     },
                     {
-                        icon: '🚠',
-                        title: 'Day 4：大嶼山纜車與滿載而歸',
-                        subtitle: '上環 ➔ 東涌 (寄放行李) ➔ 昂坪 360 ➔ 機場 (20:10 班機)',
+                        icon: '🚠', title: 'Day 4：大嶼山纜車與滿載而歸', subtitle: '上環 ➔ 東涌 (寄放行李) ➔ 昂坪 360 ➔ 機場 (20:10 班機)',
                         steps: [
                             { time: '10:00 - 11:30', desc: '飯店退房。搭乘港鐵直奔 <a href="https://www.google.com/maps/search/?api=1&query=東涌站" target="_blank" class="hyperlink">東涌站</a>，將行李寄放於 <a href="https://www.google.com/maps/search/?api=1&query=東薈城名店倉" target="_blank" class="hyperlink">東薈城名店倉</a> 的置物櫃。' },
                             { time: '11:30 - 15:30', desc: '搭乘 <a href="https://www.google.com/maps/search/?api=1&query=昂坪360纜車" target="_blank" class="hyperlink">昂坪 360 纜車</a> <span class="highlight-tag">通票景點 3</span> 前往大嶼山參觀 <a href="https://www.google.com/maps/search/?api=1&query=天壇大佛" target="_blank" class="hyperlink">天壇大佛</a> 體驗大自然風光。' },
@@ -392,92 +643,55 @@
                             { time: '17:30 - 18:00', desc: '自東涌搭乘 S1 循環巴士或計程車直達 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" target="_blank" class="hyperlink">香港國際機場</a>，辦理 20:10 班機的登機手續。' }
                         ]
                     }
-                ])
+                ]);
 
+                // 清單資料
                 const defaultChecklist = [
-                    {
-                        name: '📄 必備證件',
-                        items: [
-                            { text: '護照 (效期需 6 個月以上)', done: false },
-                            { text: '香港電子簽證', done: false },
-                            { text: '臺灣身分證健保卡 (備用)', done: false },
-                            { text: '旅平險不便險', done: false }
-                        ]
-                    },
-                    {
-                        name: '🎟️ 交通與票券',
-                        items: [
-                            { text: '山頂纜車來回', done: false },
-                            { text: '張保仔號海盜船票', done: false },
-                            { text: '機場快線 (各自購買)', done: false }
-                        ]
-                    },
-                    {
-                        name: '🔋 💊 📱 雜項',
-                        items: [
-                            { text: '旅客八達通APP儲值HK100', done: false },
-                            { text: '辦eSIM ! !', done: false },
-                            { text: '攜帶港幣', done: false },
-                            { text: '萬國轉接頭 (220V)', done: false },
-                            { text: '小雨傘', done: false },
-                            { text: '防曬乳、墨鏡 (有34度哦哦哦)', done: false },
-                            { text: '好穿的鞋子 (聽我美甲師說可能會一直走路?)', done: false },
-                            { text: '薄外套 (室內外溫差大)', done: false },
-                            { text: '船藥 (會坐45分鐘!)、腸胃藥、防蚊液', done: false }
-                        ]
-                    }
+                    { name: '📄 必備證件', items: [{ text: '護照 (效期需 6 個月以上)', done: false }, { text: '香港電子簽證', done: false }, { text: '臺灣身分證健保卡 (備用)', done: false }, { text: '旅平險不便險', done: false }] },
+                    { name: '🎟️ 交通與票券', items: [{ text: '山頂纜車來回', done: false }, { text: '張保仔號海盜船票', done: false }, { text: '機場快線 (各自購買)', done: false }] },
+                    { name: '🔋 💊 📱 雜項', items: [{ text: '旅客八達通APP儲值HK100', done: false }, { text: '辦eSIM ! !', done: false }, { text: '攜帶港幣', done: false }, { text: '萬國轉接頭 (220V)', done: false }, { text: '小雨傘', done: false }, { text: '防曬乳、墨鏡 (有34度哦哦哦)', done: false }, { text: '好穿的鞋子', done: false }, { text: '薄外套 (室內外溫差大)', done: false }, { text: '船藥、腸胃藥、防蚊液', done: false }] }
                 ];
 
                 const checklist = ref(defaultChecklist);
-
-                // === 新增 CRUD 狀態與方法 ===
                 const editingItem = ref({ cIndex: -1, iIndex: -1 });
                 const editingText = ref('');
                 const newItemTexts = ref({});
 
-                // 啟動編輯模式
-                const startEdit = (cIndex, iIndex, text) => {
-                    editingItem.value = { cIndex, iIndex };
-                    editingText.value = text;
-                };
-
-                // 儲存編輯結果
-                const saveEdit = (cIndex, iIndex) => {
-                    if (editingText.value.trim() !== '') {
-                        checklist.value[cIndex].items[iIndex].text = editingText.value.trim();
-                    }
-                    editingItem.value = { cIndex: -1, iIndex: -1 };
-                };
-
-                // 刪除項目
-                const deleteItem = (cIndex, iIndex) => {
-                    checklist.value[cIndex].items.splice(iIndex, 1);
-                };
-
-                // 新增項目
-                const addItem = (cIndex) => {
-                    const text = newItemTexts.value[cIndex]?.trim();
-                    if (text) {
-                        checklist.value[cIndex].items.push({ text, done: false });
-                        newItemTexts.value[cIndex] = ''; // 清空輸入框
-                    }
-                };
-                // ==========================
+                const startEdit = (cIndex, iIndex, text) => { editingItem.value = { cIndex, iIndex }; editingText.value = text; };
+                const saveEdit = (cIndex, iIndex) => { if (editingText.value.trim() !== '') { checklist.value[cIndex].items[iIndex].text = editingText.value.trim(); } editingItem.value = { cIndex: -1, iIndex: -1 }; };
+                const deleteItem = (cIndex, iIndex) => { checklist.value[cIndex].items.splice(iIndex, 1); };
+                const addItem = (cIndex) => { const text = newItemTexts.value[cIndex]?.trim(); if (text) { checklist.value[cIndex].items.push({ text, done: false }); newItemTexts.value[cIndex] = ''; } };
 
                 onMounted(() => {
-                    fetchWeather(); // 載入天氣
+                    fetchWeather();
+                    
+                    // 讀取上次開啟的 Tab
+                    const savedTab = localStorage.getItem(TAB_STORAGE_KEY);
+                    if(savedTab) activeTab.value = savedTab;
 
+                    // 讀取清單
                     const savedChecklist = localStorage.getItem(STORAGE_KEY);
                     if (savedChecklist) {
-                        try {
-                            checklist.value = JSON.parse(savedChecklist);
-                            syncStatus.value = true;
-                            setTimeout(() => syncStatus.value = false, 3000);
-                        } catch (e) {
-                            console.error('解析儲存的清單時出錯：', e);
-                            checklist.value = defaultChecklist;
-                        }
+                        try { checklist.value = JSON.parse(savedChecklist); } 
+                        catch (e) { checklist.value = defaultChecklist; }
                     }
+                    
+                    // 讀取記帳與匯率
+                    const savedWallet = localStorage.getItem(WALLET_STORAGE_KEY);
+                    if (savedWallet) {
+                        try {
+                            const data = JSON.parse(savedWallet);
+                            if(data.rate) exchangeRate.value = data.rate;
+                            if(data.expenses) expenses.value = data.expenses;
+                        } catch (e) { console.error('錢包讀取失敗', e); }
+                    }
+                });
+
+                // 監聽 Tab 切換儲存狀態
+                watch(activeTab, (newVal) => {
+                    localStorage.setItem(TAB_STORAGE_KEY, newVal);
+                    // 切換 Tab 時自動將卷軸滾動到頂部以獲得最佳體驗
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
 
                 watch(checklist, (newChecklist) => {
@@ -486,48 +700,36 @@
                     setTimeout(() => syncStatus.value = false, 1500);
                 }, { deep: true });
 
+                watch([expenses, exchangeRate], () => {
+                    localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify({
+                        rate: exchangeRate.value,
+                        expenses: expenses.value
+                    }));
+                    syncStatus.value = true;
+                    setTimeout(() => syncStatus.value = false, 1500);
+                }, { deep: true });
+
                 const completedItems = computed(() => {
                     let completed = 0;
-                    checklist.value.forEach(category => {
-                        category.items.forEach(item => {
-                            if (item.done) completed++;
-                        });
-                    });
+                    checklist.value.forEach(category => category.items.forEach(item => { if (item.done) completed++; }));
                     return completed;
-                })
+                });
 
                 const totalItems = computed(() => {
                     let total = 0;
-                    checklist.value.forEach(category => {
-                        category.items.forEach(() => {
-                            total++;
-                        });
-                    });
+                    checklist.value.forEach(category => category.items.forEach(() => total++ ));
                     return total;
-                })
+                });
 
-                const progress = computed(() => {
-                    return totalItems.value === 0 ? 0 : Math.round((completedItems.value / totalItems.value) * 100);
-                })
+                const progress = computed(() => totalItems.value === 0 ? 0 : Math.round((completedItems.value / totalItems.value) * 100));
 
                 return {
-                    syncStatus,
-                    itinerary,
-                    checklist,
-                    completedItems,
-                    totalItems,
-                    progress,
-                    weatherData,
-                    weatherLoading,
-                    weatherError,
-                    // 匯出新增的狀態與方法供模板使用
-                    editingItem,
-                    editingText,
-                    newItemTexts,
-                    startEdit,
-                    saveEdit,
-                    deleteItem,
-                    addItem
+                    activeTab, // 新增的 Tab 控制變數
+                    syncStatus, itinerary, checklist, completedItems, totalItems, progress,
+                    weatherData, weatherLoading, weatherError,
+                    editingItem, editingText, newItemTexts, startEdit, saveEdit, deleteItem, addItem,
+                    exchangeRate, expenses, newExpense, fileInputRef,
+                    calculatedHKD, calculatedTWD, calculateAmount, calculateAndAddExpense, handlePhotoUpload, deleteExpense, totalExpenseHKD, totalExpenseTWD
                 }
             }
         }).mount('#app')
