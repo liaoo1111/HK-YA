@@ -301,12 +301,10 @@
                                 <div class="flex space-x-4">
                                     <div class="flex-1">
                                         <label class="block text-xs font-bold text-gray-500 mb-1.5">日期</label>
-                                        <!-- 使用 HTML5 date picker 統一高度 h-[44px] -->
                                         <input type="date" v-model="newExpense.date" class="w-full bg-gray-50 px-3 h-[44px] rounded-xl border-none focus:ring-2 focus:ring-wallet-fab/50 font-bold text-gray-700 text-sm">
                                     </div>
                                     <div class="flex-1">
                                         <label class="block text-xs font-bold text-gray-500 mb-1.5">付款方式</label>
-                                        <!-- 付款方式容器統一高度 h-[44px] -->
                                         <div class="flex bg-gray-50 rounded-xl p-1 h-[44px] items-center">
                                             <button @click="newExpense.paymentMethod = 'cash'" :class="['flex-1 h-full rounded-lg text-sm font-bold transition-all', newExpense.paymentMethod === 'cash' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">💵 現金</button>
                                             <button @click="newExpense.paymentMethod = 'credit'" :class="['flex-1 h-full rounded-lg text-sm font-bold transition-all', newExpense.paymentMethod === 'credit' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">💳 刷卡</button>
@@ -406,7 +404,6 @@
         const { createApp, ref, computed, watch, onMounted } = Vue
 
         const STORAGE_KEY = 'hk_travel_checklist_v16'; 
-        // 變更 Wallet Key 確保資料欄位結構不會因為舊資料出錯
         const WALLET_STORAGE_KEY = 'hk_travel_wallet_v4'; 
         const TAB_STORAGE_KEY = 'hk_travel_active_tab_v2';
 
@@ -454,7 +451,6 @@
                 
                 const newExpense = ref(defaultExpense());
 
-                // 算式計算功能
                 const evaluateMath = (expr) => {
                     try {
                         const sanitized = expr.replace(/[^-()\d/*+.]/g, '');
@@ -464,10 +460,8 @@
                     } catch (e) { return 0; }
                 };
 
-                // 取得輸入框算出的原始數值
                 const rawAmount = computed(() => evaluateMath(newExpense.value.amountInput));
 
-                // 根據選定幣別動態計算港幣與台幣
                 const calculatedHKD = computed(() => {
                     if (newExpense.value.currency === 'HKD') return rawAmount.value;
                     if (newExpense.value.currency === 'TWD') return rawAmount.value / exchangeRate.value;
@@ -493,7 +487,6 @@
                 };
                 const closeAddModal = () => { isAddModalOpen.value = false; };
 
-                // 抓取線上最新匯率
                 const fetchExchangeRate = async () => {
                     isFetchingRate.value = true;
                     try {
@@ -528,7 +521,6 @@
                         return;
                     }
                     
-                    // 為了介面顯示好看，把 YYYY-MM-DD 轉成 MM-DD
                     let displayDate = newExpense.value.date;
                     if (displayDate.includes('-')) {
                         const parts = displayDate.split('-');
@@ -571,9 +563,8 @@
                 const totalExpenseTWD = computed(() => {
                     return expenses.value.reduce((sum, exp) => sum + Number(exp.amountTWD), 0);
                 });
+                
                 // ==============================
-
-                // 天氣狀態
                 const weatherData = ref([]);
                 const weatherLoading = ref(true);
                 const weatherError = ref(false);
@@ -633,26 +624,28 @@
                         ]
                     },
                     {
-                        icon: '🛍️', title: 'Day 3：九龍潮流大縱走', subtitle: '澳牛 ➔ 旺記 ➔ 旺角 ➔ 太子 ➔ 廟街',
+                        icon: '🛍️', title: 'Day 3：香港吃美食', subtitle: '澳牛 ➔ 旺記 ➔ 旺角 ➔ 太子 ➔ 廟街',
                         steps: [
-                            { time: '早上', desc: '9點或9點半 出門！' },
-                            { time: '早餐', desc: '搭港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=佐敦站" class="hyperlink" target="_blank" rel="noopener noreferrer">佐敦站</a> 吃 <a href="https://www.google.com/maps/search/?api=1&query=澳洲牛奶公司" class="hyperlink" target="_blank" rel="noopener noreferrer">澳洲牛奶公司</a> (經典炒蛋多士)，或隔壁的 <a href="https://www.google.com/maps/search/?api=1&query=麥文記麵食" class="hyperlink" target="_blank" rel="noopener noreferrer">麥文記麵食</a>。' },
-                            { time: '順遊', desc: '逛附近的選品店、紀念品店<br>👉 <a href="https://www.google.com/maps/search/?api=1&query=巧佳小巴用品" class="hyperlink" target="_blank" rel="noopener noreferrer">巧佳小八用品</a>' },
-                            { time: '午餐', desc: '前往品嚐超人氣的 <a href="https://www.google.com/maps/search/?api=1&query=旺記冰室+尖沙咀店" class="hyperlink" target="_blank" rel="noopener noreferrer">旺記冰室 (尖沙咀店)</a>，必吃「滑蛋雙拼飯」！' },
-                            { time: '18:00 - 20:00', desc: '前往 <a href="https://www.google.com/maps/search/?api=1&query=太子站" class="hyperlink" target="_blank" rel="noopener noreferrer">太子站</a> 吃 <a href="https://www.google.com/maps/search/?api=1&query=一點心" class="hyperlink" target="_blank" rel="noopener noreferrer">一點心</a>。必點鮮蝦腐皮捲與蘿蔔糕！' },
-                            { time: '夜市', desc: '吃飽後搭港鐵直達 <a href="https://www.google.com/maps/search/?api=1&query=油麻地站" class="hyperlink" target="_blank" rel="noopener noreferrer">油麻地站</a>，體驗 <a href="https://www.google.com/maps/search/?api=1&query=廟街夜市" class="hyperlink" target="_blank" rel="noopener noreferrer">廟街夜市</a>' },
-                            { time: '夜間', desc: '若有空餘的時間可以體驗 <a href="https://www.google.com/maps/search/?api=1&query=落日飛車" class="hyperlink" target="_blank" rel="noopener noreferrer">落日飛車</a>' }
+                            { time: '早餐', desc: '中環至上環車站附近可以去 前一天沒有去到的咖啡廳 ！再去 <a href="https://www.google.com/maps/search/?api=1&query=檸檬王+Lemon+King" class="hyperlink" target="_blank" rel="noopener noreferrer">檸檬王 Lemon King</a> 採買' },
+                            { time: '→', desc: '搭港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=佐敦站" class="hyperlink" target="_blank" rel="noopener noreferrer">佐敦站</a> 吃 <a href="https://www.google.com/maps/search/?api=1&query=澳洲牛奶公司" class="hyperlink" target="_blank" rel="noopener noreferrer">澳洲牛奶公司</a> (經典炒蛋多士)，或隔壁的 <a href="https://www.google.com/maps/search/?api=1&query=麥文記麵食" class="hyperlink" target="_blank" rel="noopener noreferrer">麥文記麵食</a>。' },
+                            { time: '→', desc: '逛附近的選品店、紀念品店<br>👉 <a href="https://www.google.com/maps/search/?api=1&query=巧佳小巴用品" class="hyperlink" target="_blank" rel="noopener noreferrer">巧佳小巴用品</a>' },
+                            { time: '午餐', desc: '去吃 <a href="https://www.google.com/maps/search/?api=1&query=旺記冰室+尖沙咀店" class="hyperlink" target="_blank" rel="noopener noreferrer">旺記冰室 (尖沙咀店)</a>，必吃「滑蛋雙拼飯」！' },
+                            { time: '→', desc: '前往 <a href="https://www.google.com/maps/search/?api=1&query=太子站" class="hyperlink" target="_blank" rel="noopener noreferrer">太子站</a> 吃 <a href="https://www.google.com/maps/search/?api=1&query=一點心" class="hyperlink" target="_blank" rel="noopener noreferrer">一點心</a>。必點鮮蝦腐皮捲與蘿蔔糕！' },
+                            { time: '自由跟隨', desc: '吃飽後搭港鐵直達 <a href="https://www.google.com/maps/search/?api=1&query=油麻地站" class="hyperlink" target="_blank" rel="noopener noreferrer">油麻地站</a>，體驗 <a href="https://www.google.com/maps/search/?api=1&query=廟街夜市" class="hyperlink" target="_blank" rel="noopener noreferrer">廟街夜市</a>' },
+                            { time: '必去', desc: '<strong>如果有空餘的時間可以體驗 <a href="https://www.google.com/maps/search/?api=1&query=落日飛車" class="hyperlink" target="_blank" rel="noopener noreferrer">落日飛車</a></strong> 建議傍晚左右去' }
                         ]
                     },
                     {
-                        icon: '🚠', title: 'Day 4：大嶼山與滿載而歸', subtitle: '中環/香港站 ➔ 東涌 ➔ 昂坪 360 ➔ 機場',
+                        icon: '🚠', title: 'Day 4：大嶼山與滿載而歸',
                         steps: [
-                            { time: '早上', desc: '9點或9點半 出門！' },
-                            { time: '【早餐】', desc: '推薦在 <a href="https://www.google.com/maps/search/?api=1&query=中環站" class="hyperlink" target="_blank" rel="noopener noreferrer">中環站</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=香港站" class="hyperlink" target="_blank" rel="noopener noreferrer">香港站</a> 附近吃港式早餐。可以吃 <a href="https://www.google.com/maps/search/?api=1&query=添好運+香港站" class="hyperlink" target="_blank" rel="noopener noreferrer">添好運 (香港站)</a> (搭東涌線超順路)，或是道地老字號的 <a href="https://www.google.com/maps/search/?api=1&query=羅富記粥麵專家+中環" class="hyperlink" target="_blank" rel="noopener noreferrer">羅富記粥麵專家</a>。' },
-                            { time: '【 → 】', desc: '退房，搭港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=東涌站" class="hyperlink" target="_blank" rel="noopener noreferrer">東涌站</a> 的 <a href="https://www.google.com/maps/search/?api=1&query=東薈城名店倉" class="hyperlink" target="_blank" rel="noopener noreferrer">東薈城名店倉</a> 寄放行李。' },
-                            { time: '【纜車】', desc: '預計 11:30 左右抵達搭乘 <a href="https://www.google.com/maps/search/?api=1&query=昂坪360" class="hyperlink" target="_blank" rel="noopener noreferrer">昂坪 360</a> 纜車參觀 <a href="https://www.google.com/maps/search/?api=1&query=天壇大佛" class="hyperlink" target="_blank" rel="noopener noreferrer">天壇大佛</a>。' },
-                            { time: '【 → 】', desc: '回到 <a href="https://www.google.com/maps/search/?api=1&query=東薈城名店倉" class="hyperlink" target="_blank" rel="noopener noreferrer">東薈城 Outlet</a> 享用下午茶與最後採買。' },
-                            { time: '【 → 】', desc: '前往 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" class="hyperlink" target="_blank" rel="noopener noreferrer">香港國際機場</a>，17:00 抵達，辦理 20:10 班機登機。<br><br><span class="text-rose-500 font-black text-xl flex items-center mt-2">🎉 HAPPY ENDING!!</span>' }
+                            { time: '自由跟隨', desc: '退房前搭港鐵去<a href="https://www.google.com/maps/search/?api=1&query=堅尼地城" class="hyperlink" target="_blank" rel="noopener noreferrer">堅尼地城</a>拍照。' },
+                            { time: '→', desc: '大約8點左右抵達堅尼地城，在附近吃 <a href="https://www.google.com/maps/search/?api=1&query=新興食家" class="hyperlink" target="_blank" rel="noopener noreferrer">新興食家</a> 後 可買 <a href="https://www.google.com/maps/search/?api=1&query=Soft+Thunder+Bakery" class="hyperlink" target="_blank" rel="noopener noreferrer">Soft Thunder Bakery</a> 蛋塔 (早上9點開門)。' },
+                            { time: '→', desc: '大約10點左右會回飯店整理後退房，飯店11點退房。' },
+                            { time: '早上', desc: '在 <a href="https://www.google.com/maps/search/?api=1&query=中環站" class="hyperlink" target="_blank" rel="noopener noreferrer">中環站</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=香港站" class="hyperlink" target="_blank" rel="noopener noreferrer">香港站</a> 附近 再吃港式早餐 (YA)。<br><strong>目前暫未規劃要吃哪一家</strong>' },
+                            { time: '→', desc: '搭 45分鐘 香港快線抵達<a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" class="hyperlink" target="_blank" rel="noopener noreferrer">香港機場</a>，尋找可寄放行李的地方，再搭機場客運 前往 <a href="https://www.google.com/maps/search/?api=1&query=東涌站" class="hyperlink" target="_blank" rel="noopener noreferrer">東涌站</a>。' },
+                            { time: '纜車', desc: '預計12點 左右抵達搭乘 <a href="https://www.google.com/maps/search/?api=1&query=昂坪360" class="hyperlink" target="_blank" rel="noopener noreferrer">昂坪 360</a> 纜車參觀 <a href="https://www.google.com/maps/search/?api=1&query=天壇大佛" class="hyperlink" target="_blank" rel="noopener noreferrer">天壇大佛</a>。' },
+                            { time: '自由跟隨', desc: '回到 <a href="https://www.google.com/maps/search/?api=1&query=東薈城名店倉" class="hyperlink" target="_blank" rel="noopener noreferrer">東薈城 Outlet</a> 吃美食 + 逛街買。' },
+                            { time: '→', desc: '前往 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" class="hyperlink" target="_blank" rel="noopener noreferrer">香港國際機場</a>，17:00 抵達，辦理 20:10 班機登機。<br><br><span class="text-rose-500 font-black text-xl flex items-center mt-2">🎉 HAPPY ENDING!!</span>' }
                         ]
                     }
                 ]);
@@ -709,7 +702,6 @@
                             const data = JSON.parse(savedWallet);
                             if(data.rate) exchangeRate.value = data.rate;
                             if(data.expenses) {
-                                // 相容舊資料，給予預設 paymentMethod 與 currency
                                 expenses.value = data.expenses.map(exp => ({
                                     ...exp,
                                     paymentMethod: exp.paymentMethod || 'cash',
@@ -719,7 +711,6 @@
                             }
                         } catch (e) { console.error(e); }
                     } else {
-                        // 首次載入取得一次匯率
                         fetchExchangeRate();
                     }
                 });
