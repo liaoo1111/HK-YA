@@ -247,12 +247,19 @@
                                     <div :class="[getCategoryColor(exp.category), 'w-11 h-11 rounded-full flex items-center justify-center text-white text-lg mr-4 flex-shrink-0 shadow-sm']">
                                         {{ getCategoryIcon(exp.category) }}
                                     </div>
-                                    <div class="min-w-0">
-                                        <div class="font-black text-gray-800 text-base md:text-lg mb-0.5 truncate">{{ exp.name }}</div>
-                                        <div class="text-[11px] text-gray-400 font-bold flex items-center">
-                                            {{ exp.date }} • {{ getCategoryName(exp.category) }} 
-                                            <span class="mx-1.5 opacity-50">|</span> 
-                                            <span class="text-gray-500">{{ exp.paymentMethod === 'credit' ? '💳 刷卡' : '💵 現金' }}</span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-black text-gray-800 text-base md:text-lg mb-1.5 truncate">{{ exp.name }}</div>
+                                        
+                                        <!-- 網格排版：固定寬高的浮動框，上下並列 -->
+                                        <div class="grid grid-rows-2 gap-1.5 w-[96px]">
+                                            <div class="w-full h-[22px] flex items-center justify-center bg-slate-100 border border-slate-200/60 text-slate-500 text-[10px] font-bold rounded shadow-sm">
+                                                📅 {{ exp.date }}
+                                            </div>
+                                            <div class="w-full h-[22px] flex items-center justify-center bg-slate-100 border border-slate-200/60 text-slate-500 text-[10px] font-bold rounded shadow-sm">
+                                                <span v-if="exp.paymentMethod === 'credit'">💳 信用卡</span>
+                                                <span v-else-if="exp.paymentMethod === 'octopus'">🐙 八達通</span>
+                                                <span v-else>💵 現金</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -303,11 +310,12 @@
                                         <label class="block text-xs font-bold text-gray-500 mb-1.5">日期</label>
                                         <input type="date" v-model="newExpense.date" class="w-full bg-gray-50 px-3 h-[44px] rounded-xl border-none focus:ring-2 focus:ring-wallet-fab/50 font-bold text-gray-700 text-sm">
                                     </div>
-                                    <div class="flex-1">
+                                    <div class="flex-[1.5]">
                                         <label class="block text-xs font-bold text-gray-500 mb-1.5">付款方式</label>
-                                        <div class="flex bg-gray-50 rounded-xl p-1 h-[44px] items-center">
-                                            <button @click="newExpense.paymentMethod = 'cash'" :class="['flex-1 h-full rounded-lg text-sm font-bold transition-all', newExpense.paymentMethod === 'cash' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">💵 現金</button>
-                                            <button @click="newExpense.paymentMethod = 'credit'" :class="['flex-1 h-full rounded-lg text-sm font-bold transition-all', newExpense.paymentMethod === 'credit' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">💳 刷卡</button>
+                                        <div class="flex bg-gray-50 rounded-xl p-1 h-[44px] items-center space-x-1">
+                                            <button @click="newExpense.paymentMethod = 'cash'" :class="['flex-1 h-full rounded-lg text-xs font-bold transition-all', newExpense.paymentMethod === 'cash' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">💵 現金</button>
+                                            <button @click="newExpense.paymentMethod = 'credit'" :class="['flex-1 h-full rounded-lg text-xs font-bold transition-all', newExpense.paymentMethod === 'credit' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">💳 信用卡</button>
+                                            <button @click="newExpense.paymentMethod = 'octopus'" :class="['flex-1 h-full rounded-lg text-xs font-bold transition-all', newExpense.paymentMethod === 'octopus' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600']">🐙 八達通</button>
                                         </div>
                                     </div>
                                 </div>
@@ -602,7 +610,7 @@
                 // 行程資料 
                 const itinerary = ref([
                     {
-                        icon: '🥃', title: 'Day 1：抵達與微醺', subtitle: '機場 ➔ 上環 ➔ 銅鑼灣 ➔ DarkSide 酒吧',
+                        icon: '🥃', title: 'Day 1：到香港囉!!', subtitle: '機場 ➔ 上環 ➔ 銅鑼灣 ➔ DarkSide 酒吧',
                         steps: [
                             { time: '早上', desc: '班機抵達 <a href="https://www.google.com/maps/search/?api=1&query=香港國際機場" class="hyperlink" target="_blank" rel="noopener noreferrer">香港國際機場</a>！入境後，搭機場快綫轉港鐵至 <a href="https://www.google.com/maps/search/?api=1&query=富薈上環酒店" class="hyperlink" target="_blank" rel="noopener noreferrer">富薈上環酒店</a> 先行寄放行李。' },
                             { time: '午餐', desc: '搭港鐵前往<a href="https://www.google.com/maps/search/?api=1&query=灣仔" class="hyperlink" target="_blank" rel="noopener noreferrer">灣仔</a>/<a href="https://www.google.com/maps/search/?api=1&query=銅鑼灣" class="hyperlink" target="_blank" rel="noopener noreferrer">銅鑼灣</a>。推薦吃 <a href="https://www.google.com/maps/search/?api=1&query=甘牌燒鵝" class="hyperlink" target="_blank" rel="noopener noreferrer">甘牌燒鵝</a> 或 <a href="https://www.google.com/maps/search/?api=1&query=竺扶大班燒味" class="hyperlink" target="_blank" rel="noopener noreferrer">竺扶大班燒味</a>。' },
